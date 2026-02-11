@@ -106,8 +106,11 @@ class AudioManager: ObservableObject {
                 // Create new app with default settings
                 let iconName = appIconMap[bundleID] ?? "app.fill"
                 
-                // Try to get the actual app icon
-                let appIcon = NSWorkspace.shared.icon(forFile: app.bundleURL?.path ?? "")
+                // Try to get the actual app icon from bundle
+                var appIcon: NSImage? = nil
+                if let bundlePath = app.bundleURL?.path, !bundlePath.isEmpty {
+                    appIcon = NSWorkspace.shared.icon(forFile: bundlePath)
+                }
                 
                 let newApp = AudioApp(
                     name: localizedName,
