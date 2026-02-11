@@ -175,6 +175,22 @@ class AudioManager: ObservableObject {
         updateRunningApps()
     }
     
+    func muteAllApps() {
+        DispatchQueue.main.async {
+            for app in self.audioApps {
+                app.isMuted = true
+            }
+        }
+    }
+    
+    func unmuteAllApps() {
+        DispatchQueue.main.async {
+            for app in self.audioApps {
+                app.isMuted = false
+            }
+        }
+    }
+    
     // MARK: - Core Audio Integration
     // This is where eqMac driver integration would happen
     
