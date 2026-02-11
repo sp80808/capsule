@@ -17,7 +17,7 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 ### 📊 Project Stats
 - **Swift Code**: 450 lines across 4 files
 - **UI Components**: 5 custom SwiftUI views
-- **Documentation**: 6 comprehensive guides (31KB total)
+- **Documentation**: 7 comprehensive guides (41KB total)
 - **Features**: Per-app audio control UI, volume sliders, mute functionality
 
 ## File Structure
@@ -142,6 +142,9 @@ Core Audio APIs, implementation approach, system permissions
 ### EQMAC_INTEGRATION.md (9.2KB)
 Detailed eqMac integration guide, code examples, alternatives
 
+### SUMMARY.md (5.8KB)
+Project overview, statistics, and quick reference
+
 ## Technologies Used
 
 - **Language**: Swift 5.0
@@ -189,6 +192,6 @@ Built following the requirements:
 
 ---
 
-**Project Size**: 450 lines of Swift code + 31KB documentation
+**Project Size**: 450 lines of Swift code + 41KB documentation
 **Time to Build**: Project structured for easy continuation
 **Ready for**: macOS developers to build and extend
