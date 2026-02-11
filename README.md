@@ -10,8 +10,10 @@ A beautiful native macOS audio mixer with per-app volume control, featuring a sl
 
 - 🎨 **Native macOS Design**: Control Center-inspired pill sliders with frosted glass effects
 - 🔊 **Per-App Audio Control**: Individual volume control for each application
-- 🎵 **Real-time Monitoring**: See which apps are currently playing audio
-- 🖼️ **SF Symbols**: Beautiful system icons for each app
+- 🎵 **Real-time App Detection**: Automatically detects running applications
+- 🔍 **App Search**: Quickly find apps with built-in search functionality
+- ⌨️ **Keyboard Shortcuts**: Control Capsule without touching your mouse
+- 🖼️ **Real App Icons**: Displays actual application icons from bundles
 - ✨ **Smooth Animations**: Spring-based animations for a polished feel
 - 🌙 **Dark Mode**: Fully supports macOS appearance modes
 
@@ -56,9 +58,11 @@ The app is structured with clean separation of concerns:
 ### Audio Integration
 
 The current implementation includes:
-- Core Audio framework integration for device enumeration
+- Running application detection using NSWorkspace
+- Automatic app launch/termination monitoring
+- Real app icon extraction from bundles
+- Search and filtering capabilities
 - Foundation for per-app audio tapping (ready for eqMac driver integration)
-- Sample app data for UI demonstration
 
 ### Future Enhancements
 
@@ -73,7 +77,10 @@ To integrate with eqMac driver for actual per-app audio tapping:
 
 - **Adjust Volume**: Drag the pill slider left or right
 - **Mute/Unmute**: Double-tap on a slider
-- **Refresh Apps**: Click the refresh button in the header
+- **Search Apps**: Type in the search bar to filter applications
+- **Refresh Apps**: Click the refresh button or press ⌘R
+- **Mute All**: Press ⌘⇧M to mute all apps
+- **Unmute All**: Press ⌘⇧U to unmute all apps
 
 ## License
 
