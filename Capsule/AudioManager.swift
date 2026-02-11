@@ -105,10 +105,15 @@ class AudioManager: ObservableObject {
             } else {
                 // Create new app with default settings
                 let iconName = appIconMap[bundleID] ?? "app.fill"
+                
+                // Try to get the actual app icon
+                let appIcon = NSWorkspace.shared.icon(forFile: app.bundleURL?.path ?? "")
+                
                 let newApp = AudioApp(
                     name: localizedName,
                     bundleIdentifier: bundleID,
                     iconName: iconName,
+                    appIcon: appIcon,
                     volume: 0.7,
                     isPlaying: false
                 )
@@ -252,14 +257,16 @@ class AudioApp: ObservableObject, Identifiable {
     let name: String
     let bundleIdentifier: String?
     let iconName: String
+    @Published var appIcon: NSImage?
     @Published var volume: Double
     @Published var isMuted: Bool
     @Published var isPlaying: Bool
     
-    init(name: String, bundleIdentifier: String? = nil, iconName: String, volume: Double, isPlaying: Bool, isMuted: Bool = false) {
+    init(name: String, bundleIdentifier: String? = nil, iconName: String, appIcon: NSImage? = nil, volume: Double, isPlaying: Bool, isMuted: Bool = false) {
         self.name = name
         self.bundleIdentifier = bundleIdentifier
         self.iconName = iconName
+        self.appIcon = appIcon
         self.volume = volume
         self.isPlaying = isPlaying
         self.isMuted = isMuted

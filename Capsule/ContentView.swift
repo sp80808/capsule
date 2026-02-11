@@ -30,9 +30,29 @@ struct ContentView: View {
                 // App Volume Controls
                 ScrollView {
                     VStack(spacing: 16) {
-                        ForEach(audioManager.audioApps) { app in
-                            AppVolumeControl(app: app)
-                                .padding(.horizontal, 20)
+                        if audioManager.audioApps.isEmpty {
+                            // Empty state
+                            VStack(spacing: 12) {
+                                Image(systemName: "speaker.slash.fill")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.secondary.opacity(0.5))
+                                
+                                Text("No Applications Running")
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                                
+                                Text("Launch apps to see their audio controls")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 100)
+                        } else {
+                            ForEach(audioManager.audioApps) { app in
+                                AppVolumeControl(app: app)
+                                    .padding(.horizontal, 20)
+                            }
                         }
                     }
                     .padding(.vertical, 20)
@@ -74,19 +94,27 @@ struct AppVolumeControl: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                // App icon placeholder
-                Image(systemName: app.iconName)
-                    .font(.title3)
-                    .foregroundColor(.white)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.blue, Color.purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                // App icon - use real icon if available, otherwise use SF Symbol
+                if let appIcon = app.appIcon {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 32, height: 32)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Image(systemName: app.iconName)
+                        .font(.title3)
+                        .foregroundColor(.white)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(app.name)
