@@ -76,7 +76,7 @@ struct CapsuleVolumeControl: View {
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                         .offset(x: max(4, (geometry.size.width - capsuleHeight + 8) * appItem.volume))
                         .scaleEffect(bounceScale)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6, blendDuration: 0), value: bounceScale)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: bounceScale)
                 }
                 .contentShape(Rectangle())
                 .gesture(

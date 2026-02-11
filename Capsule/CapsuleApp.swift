@@ -31,7 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let button = statusItem?.button {
             // Use SF Symbol for the menu bar icon
-            button.image = NSImage(systemSymbolName: "speaker.wave.3.fill", accessibilityDescription: "Capsule Audio Mixer")
+            if let image = NSImage(systemSymbolName: "speaker.wave.3.fill", accessibilityDescription: "Capsule Audio Mixer") {
+                button.image = image
+            }
             button.action = #selector(togglePopover)
             button.target = self
         }

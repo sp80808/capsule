@@ -121,11 +121,11 @@ class AudioManager: ObservableObject {
     
     /// Set the volume for a specific process
     /// This would communicate with the virtual audio driver in a full implementation
-    func setProcessVolume(processID: String, volume: Float) {
+    func setProcessVolume(bundleID: String, volume: Float) {
         // Placeholder for driver communication
         // In a full implementation:
         // 1. Send volume change command to the virtual audio driver
-        // 2. Driver intercepts audio from the specified process
+        // 2. Driver intercepts audio from the specified process (identified by bundle ID)
         // 3. Applies volume multiplication before routing to output
     }
 }
