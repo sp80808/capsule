@@ -876,7 +876,7 @@ class AudioLevelMonitor {
 
 ### 1. Always Handle Audio Interruptions
 
-iOS and macOS applications can be interrupted by phone calls, alarms, or other system events. Always implement interruption handling.
+macOS applications can be interrupted by system alerts, audio device changes, or other system events. Always implement interruption handling.
 
 ### 2. Use Appropriate Buffer Sizes
 

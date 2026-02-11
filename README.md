@@ -81,25 +81,69 @@ do {
 To route audio through eqMac's driver programmatically:
 
 ```swift
-import AVFoundation
+import CoreAudio
 
-func setEqMacAsInput() {
-    let session = AVAudioSession.sharedInstance()
+func setEqMacAsDefaultInput() -> Bool {
+    // Get all audio devices
+    var propertyAddress = AudioObjectPropertyAddress(
+        mSelector: kAudioHardwarePropertyDevices,
+        mScope: kAudioObjectPropertyScopeGlobal,
+        mElement: kAudioObjectPropertyElementMain
+    )
     
-    // Find the eqMac virtual device
-    let availableInputs = AVCaptureDevice.devices(for: .audio)
+    var dataSize: UInt32 = 0
+    guard AudioObjectGetPropertyDataSize(
+        AudioObjectID(kAudioObjectSystemObject),
+        &propertyAddress,
+        0,
+        nil,
+        &dataSize
+    ) == noErr else { return false }
     
-    if let eqMacDevice = availableInputs.first(where: { 
-        $0.localizedName.contains("eqMac") 
-    }) {
-        do {
-            try session.setPreferredInput(eqMacDevice)
-            try session.setActive(true)
-            print("Successfully configured eqMac as input source")
-        } catch {
-            print("Error setting up audio session: \(error)")
+    let deviceCount = Int(dataSize) / MemoryLayout<AudioDeviceID>.size
+    var deviceIDs = [AudioDeviceID](repeating: 0, count: deviceCount)
+    
+    guard AudioObjectGetPropertyData(
+        AudioObjectID(kAudioObjectSystemObject),
+        &propertyAddress,
+        0,
+        nil,
+        &dataSize,
+        &deviceIDs
+    ) == noErr else { return false }
+    
+    // Find eqMac device
+    for deviceID in deviceIDs {
+        var name: CFString = "" as CFString
+        var nameSize = UInt32(MemoryLayout<CFString>.size)
+        var nameAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDeviceName,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        
+        if AudioObjectGetPropertyData(deviceID, &nameAddress, 0, nil, &nameSize, &name) == noErr {
+            if (name as String).contains("eqMac") {
+                // Set as default input device
+                var defaultInputAddress = AudioObjectPropertyAddress(
+                    mSelector: kAudioHardwarePropertyDefaultInputDevice,
+                    mScope: kAudioObjectPropertyScopeGlobal,
+                    mElement: kAudioObjectPropertyElementMain
+                )
+                var deviceIDCopy = deviceID
+                return AudioObjectSetPropertyData(
+                    AudioObjectID(kAudioObjectSystemObject),
+                    &defaultInputAddress,
+                    0,
+                    nil,
+                    UInt32(MemoryLayout<AudioDeviceID>.size),
+                    &deviceIDCopy
+                ) == noErr
+            }
         }
     }
+    
+    return false
 }
 ```
 
