@@ -3,7 +3,6 @@ import SwiftUI
 struct AudioMixerView: View {
     @StateObject private var audioChannels = AudioChannels()
     @State private var masterVolume: Double = 75
-    @State private var showingMasterControls = true
     
     var body: some View {
         ZStack {

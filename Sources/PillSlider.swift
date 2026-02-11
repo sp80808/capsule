@@ -9,6 +9,10 @@ struct PillSlider: View {
     @State private var isDragging = false
     @State private var scale: CGFloat = 1.0
     
+    private var normalizedValue: CGFloat {
+        CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound))
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
@@ -52,7 +56,7 @@ struct PillSlider: View {
                             )
                         )
                         .frame(
-                            width: max(32, geometry.size.width * CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound))),
+                            width: max(32, geometry.size.width * normalizedValue),
                             height: 32
                         )
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: value)
@@ -65,7 +69,7 @@ struct PillSlider: View {
                         .scaleEffect(scale)
                         .position(
                             x: max(16, min(geometry.size.width - 16, 
-                                geometry.size.width * CGFloat((value - range.lowerBound) / (range.upperBound - range.lowerBound)))),
+                                geometry.size.width * normalizedValue)),
                             y: 16
                         )
                 }
