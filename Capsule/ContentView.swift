@@ -9,6 +9,17 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var audioManager = AudioManager.shared
+    @State private var searchText = ""
+    
+    var filteredApps: [AudioApp] {
+        if searchText.isEmpty {
+            return audioManager.audioApps
+        } else {
+            return audioManager.audioApps.filter { app in
+                app.name.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -27,12 +38,54 @@ struct ContentView: View {
                     .opacity(0.3)
                     .padding(.horizontal, 20)
                 
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Search apps...", text: $searchText)
+                        .textFieldStyle(.plain)
+                    
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(8)
+                .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                
                 // App Volume Controls
                 ScrollView {
                     VStack(spacing: 16) {
-                        ForEach(audioManager.audioApps) { app in
-                            AppVolumeControl(app: app)
-                                .padding(.horizontal, 20)
+                        if filteredApps.isEmpty {
+                            // Empty state
+                            VStack(spacing: 12) {
+                                Image(systemName: searchText.isEmpty ? "speaker.slash.fill" : "magnifyingglass")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.secondary.opacity(0.5))
+                                
+                                Text(searchText.isEmpty ? "No Applications Running" : "No Apps Found")
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                                
+                                Text(searchText.isEmpty ? "Launch apps to see their audio controls" : "Try a different search term")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 100)
+                        } else {
+                            ForEach(filteredApps) { app in
+                                AppVolumeControl(app: app)
+                                    .padding(.horizontal, 20)
+                            }
                         }
                     }
                     .padding(.vertical, 20)
@@ -63,7 +116,8 @@ struct HeaderView: View {
                     .foregroundColor(.secondary)
             }
             .buttonStyle(.plain)
-            .help("Refresh audio apps")
+            .help("Refresh audio apps (⌘R)")
+            .keyboardShortcut("r", modifiers: .command)
         }
     }
 }
@@ -74,19 +128,27 @@ struct AppVolumeControl: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                // App icon placeholder
-                Image(systemName: app.iconName)
-                    .font(.title3)
-                    .foregroundColor(.white)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.blue, Color.purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                // App icon - use real icon if available, otherwise use SF Symbol
+                if let appIcon = app.appIcon {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 32, height: 32)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Image(systemName: app.iconName)
+                        .font(.title3)
+                        .foregroundColor(.white)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(app.name)

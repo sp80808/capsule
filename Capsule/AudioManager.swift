@@ -8,6 +8,7 @@
 import Foundation
 import AVFoundation
 import CoreAudio
+import AppKit
 
 class AudioManager: ObservableObject {
     static let shared = AudioManager()
@@ -17,8 +18,8 @@ class AudioManager: ObservableObject {
     private var timer: Timer?
     
     private init() {
-        // Initialize with sample apps for demonstration
-        setupSampleApps()
+        // Initialize with real running applications
+        updateRunningApps()
     }
     
     deinit {
@@ -30,19 +31,106 @@ class AudioManager: ObservableObject {
     func initialize() {
         // Start monitoring audio apps
         startMonitoring()
+        
+        // Listen for app launch/termination
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(applicationDidLaunch),
+            name: NSWorkspace.didLaunchApplicationNotification,
+            object: nil
+        )
+        
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(applicationDidTerminate),
+            name: NSWorkspace.didTerminateApplicationNotification,
+            object: nil
+        )
     }
     
-    private func setupSampleApps() {
-        // Sample apps for demonstration
-        // In a real implementation, this would query actual running apps with audio
-        audioApps = [
-            AudioApp(name: "Music", iconName: "music.note", volume: 0.7, isPlaying: true),
-            AudioApp(name: "Safari", iconName: "safari", volume: 0.5, isPlaying: false),
-            AudioApp(name: "Spotify", iconName: "music.note.list", volume: 0.8, isPlaying: true),
-            AudioApp(name: "Chrome", iconName: "globe", volume: 0.6, isPlaying: false),
-            AudioApp(name: "Zoom", iconName: "video.fill", volume: 0.4, isPlaying: false),
-            AudioApp(name: "Slack", iconName: "message.fill", volume: 0.3, isPlaying: false),
+    @objc private func applicationDidLaunch(_ notification: Notification) {
+        updateRunningApps()
+    }
+    
+    @objc private func applicationDidTerminate(_ notification: Notification) {
+        updateRunningApps()
+    }
+    
+    private func updateRunningApps() {
+        // Get all running applications
+        let runningApps = NSWorkspace.shared.runningApplications
+        
+        // Filter for user-facing apps with valid bundle identifiers
+        let filteredApps = runningApps.filter { app in
+            guard let bundleID = app.bundleIdentifier,
+                  app.activationPolicy == .regular,
+                  let localizedName = app.localizedName,
+                  !localizedName.isEmpty else {
+                return false
+            }
+            
+            // Filter out system apps and the Capsule app itself
+            let systemApps = ["com.apple.finder", "com.apple.dock", "com.capsule.mixer"]
+            return !systemApps.contains(bundleID)
+        }
+        
+        // Common audio-capable apps with their SF Symbol icons
+        let appIconMap: [String: String] = [
+            "com.apple.Music": "music.note",
+            "com.apple.safari": "safari",
+            "com.spotify.client": "music.note.list",
+            "com.google.Chrome": "globe",
+            "us.zoom.xos": "video.fill",
+            "com.tinyspeck.slackmacgap": "message.fill",
+            "com.apple.TV": "tv",
+            "com.microsoft.teams2": "person.3.fill",
+            "org.mozilla.firefox": "globe",
+            "com.brave.Browser": "shield",
+            "com.apple.podcasts": "waveform",
+            "com.apple.FaceTime": "video.fill"
         ]
+        
+        // Create or update AudioApp instances
+        var newApps: [AudioApp] = []
+        for app in filteredApps {
+            guard let bundleID = app.bundleIdentifier,
+                  let localizedName = app.localizedName else {
+                continue
+            }
+            
+            // Check if this app already exists in our list
+            if let existingApp = audioApps.first(where: { $0.bundleIdentifier == bundleID }) {
+                // Keep existing app with its current settings
+                newApps.append(existingApp)
+            } else {
+                // Create new app with default settings
+                let iconName = appIconMap[bundleID] ?? "app.fill"
+                
+                // Try to get the actual app icon from bundle
+                var appIcon: NSImage? = nil
+                if let bundlePath = app.bundleURL?.path, !bundlePath.isEmpty {
+                    appIcon = NSWorkspace.shared.icon(forFile: bundlePath)
+                }
+                
+                let newApp = AudioApp(
+                    name: localizedName,
+                    bundleIdentifier: bundleID,
+                    iconName: iconName,
+                    appIcon: appIcon,
+                    volume: 0.7,
+                    isPlaying: false
+                )
+                newApps.append(newApp)
+            }
+        }
+        
+        // Sort by name for consistency
+        newApps.sort { $0.name.lowercased() < $1.name.lowercased() }
+        
+        // Update on main thread
+        DispatchQueue.main.async {
+            self.audioApps = newApps
+        }
     }
     
     private func startMonitoring() {
@@ -53,27 +141,57 @@ class AudioManager: ObservableObject {
     }
     
     private func updateAudioApps() {
-        // In a real implementation, this would:
-        // 1. Query Core Audio for active audio sessions
-        // 2. Get per-app audio levels
-        // 3. Update the audioApps array
-        
-        // TEMPORARY: Simulate activity changes for demonstration purposes
-        // Replace this with actual Core Audio monitoring when driver is integrated
+        // Detect which apps are likely playing audio
+        // This is a heuristic approach until driver integration
         DispatchQueue.main.async {
+            let workspace = NSWorkspace.shared
+            
             for app in self.audioApps {
-                if app.isPlaying {
-                    // Randomly toggle playing state to simulate audio activity
-                    // TODO: Replace with actual audio level detection
-                    app.isPlaying = Bool.random()
+                guard let bundleID = app.bundleIdentifier else { continue }
+                
+                // Find the running app
+                if let runningApp = workspace.runningApplications.first(where: { $0.bundleIdentifier == bundleID }) {
+                    // Heuristic: Mark common audio apps as potentially playing
+                    let audioApps = [
+                        "com.apple.Music",
+                        "com.spotify.client",
+                        "com.apple.podcasts",
+                        "com.apple.TV"
+                    ]
+                    
+                    if audioApps.contains(bundleID) && runningApp.isActive {
+                        // Likely playing if the app is active and known to play audio
+                        app.isPlaying = true
+                    } else {
+                        // For other apps, mark as potentially active but not guaranteed
+                        app.isPlaying = false
+                    }
+                } else {
+                    app.isPlaying = false
                 }
             }
         }
     }
     
     func refreshAudioApps() {
-        // Refresh the list of audio apps
-        setupSampleApps()
+        // Refresh the list of audio apps from running applications
+        updateRunningApps()
+    }
+    
+    func muteAllApps() {
+        DispatchQueue.main.async {
+            for app in self.audioApps {
+                app.isMuted = true
+            }
+        }
+    }
+    
+    func unmuteAllApps() {
+        DispatchQueue.main.async {
+            for app in self.audioApps {
+                app.isMuted = false
+            }
+        }
     }
     
     // MARK: - Core Audio Integration
@@ -156,14 +274,18 @@ class AudioManager: ObservableObject {
 class AudioApp: ObservableObject, Identifiable {
     let id = UUID()
     let name: String
+    let bundleIdentifier: String?
     let iconName: String
+    @Published var appIcon: NSImage?
     @Published var volume: Double
     @Published var isMuted: Bool
     @Published var isPlaying: Bool
     
-    init(name: String, iconName: String, volume: Double, isPlaying: Bool, isMuted: Bool = false) {
+    init(name: String, bundleIdentifier: String? = nil, iconName: String, appIcon: NSImage? = nil, volume: Double, isPlaying: Bool, isMuted: Bool = false) {
         self.name = name
+        self.bundleIdentifier = bundleIdentifier
         self.iconName = iconName
+        self.appIcon = appIcon
         self.volume = volume
         self.isPlaying = isPlaying
         self.isMuted = isMuted
