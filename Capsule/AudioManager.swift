@@ -21,6 +21,12 @@ class AudioManager: ObservableObject {
         setupSampleApps()
     }
     
+    deinit {
+        // Clean up timer to prevent memory leaks
+        timer?.invalidate()
+        timer = nil
+    }
+    
     func initialize() {
         // Start monitoring audio apps
         startMonitoring()
@@ -52,11 +58,13 @@ class AudioManager: ObservableObject {
         // 2. Get per-app audio levels
         // 3. Update the audioApps array
         
-        // For now, simulate some activity changes
+        // TEMPORARY: Simulate activity changes for demonstration purposes
+        // Replace this with actual Core Audio monitoring when driver is integrated
         DispatchQueue.main.async {
             for app in self.audioApps {
                 if app.isPlaying {
-                    // Simulate audio activity
+                    // Randomly toggle playing state to simulate audio activity
+                    // TODO: Replace with actual audio level detection
                     app.isPlaying = Bool.random()
                 }
             }
