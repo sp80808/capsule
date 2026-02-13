@@ -15,13 +15,14 @@ struct PillSlider: View {
     
     private let height: CGFloat = 48
     private let handleSize: CGFloat = 36
+    // Offset to ensure muted state changes are detectable in animation tracking
+    private let mutedStateOffset: Double = 1000.0
     
     // Computed property for animation tracking - reduces animation modifier overhead
     private var animationValue: Double {
         // Combine value (0-1) and muted state into single trackable value
-        // Using 1000 as offset ensures muted state changes are always detectable
-        // even when volume is at maximum (1.0)
-        value + (isMuted ? 1000.0 : 0.0)
+        // Offset ensures muted state changes are always detectable even at max volume
+        value + (isMuted ? mutedStateOffset : 0.0)
     }
     
     var body: some View {
