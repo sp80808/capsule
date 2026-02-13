@@ -16,7 +16,7 @@ struct PillSlider: View {
     private let height: CGFloat = 48
     private let handleSize: CGFloat = 36
     
-    // Computed property for animation tracking - more efficient than creating arrays
+    // Computed property for animation tracking - reduces animation modifier overhead
     private var animationValue: Double {
         // Combine value (0-1) and muted state into single trackable value
         // Using 1000 as offset ensures muted state changes are always detectable
@@ -89,7 +89,7 @@ struct PillSlider: View {
             }
         }
         .frame(height: height)
-        // Single animation using computed property - more efficient than array creation
+        // Single animation modifier - reduces evaluation overhead vs separate modifiers
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: animationValue)
     }
 }

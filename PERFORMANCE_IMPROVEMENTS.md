@@ -44,8 +44,7 @@ DispatchQueue.main.async {
 **Issue**: Two separate `.animation()` modifiers were applied for `value` and `isMuted` changes.
 
 **Impact**:
-- SwiftUI creates two separate animation transactions
-- Duplicate animation calculations
+- SwiftUI must evaluate two animation modifiers on each view update
 - Slightly higher CPU usage during interactions
 
 **Solution**: Combined into a single animation modifier that responds to both value changes.
@@ -129,7 +128,7 @@ Note: `resumeMonitoring()` includes a guard to prevent duplicate timers if monit
 
 - **Idle Power**: Reduced by pausing monitoring when window is inactive
 - **Active Power**: Reduced by eliminating unnecessary state changes and optimizing timer frequency
-- **Battery Life**: Expected improvement of 5-10% for users who keep the app running
+- **Battery Life**: Potential improvement for users who keep the app running, especially on laptops
 
 ## Future Optimization Opportunities
 
