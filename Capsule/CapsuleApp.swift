@@ -42,8 +42,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func windowDidBecomeKey(_ notification: Notification) {
-        // Resume monitoring when window becomes active
-        AudioManager.shared.initialize()
+        // Resume monitoring when window becomes active (without reinitializing)
+        AudioManager.shared.resumeMonitoring()
     }
     
     @objc func windowDidResignKey(_ notification: Notification) {

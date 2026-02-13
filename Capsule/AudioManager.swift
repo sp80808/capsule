@@ -32,6 +32,12 @@ class AudioManager: ObservableObject {
         startMonitoring()
     }
     
+    func resumeMonitoring() {
+        // Resume monitoring if not already active (avoids duplicate timers)
+        guard timer == nil else { return }
+        startMonitoring()
+    }
+    
     func stopMonitoring() {
         // Stop monitoring to save resources when app is not active
         timer?.invalidate()
@@ -57,7 +63,8 @@ class AudioManager: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.updateAudioApps()
         }
-        // Set tolerance to allow system to optimize power usage
+        // Set tolerance to 10% (0.5s out of 5s) to allow system to coalesce timer events
+        // This improves power efficiency by allowing the system to batch timers together
         timer?.tolerance = 0.5
     }
     

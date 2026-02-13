@@ -16,6 +16,12 @@ struct PillSlider: View {
     private let height: CGFloat = 48
     private let handleSize: CGFloat = 36
     
+    // Computed property for animation tracking - more efficient than creating arrays
+    private var animationValue: Double {
+        // Combine value and muted state into a single hashable value for animation
+        value + (isMuted ? 1000.0 : 0.0)
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
@@ -81,8 +87,8 @@ struct PillSlider: View {
             }
         }
         .frame(height: height)
-        // Combine animations for better performance - single modifier handles both value changes
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: [value, isMuted ? 1.0 : 0.0])
+        // Single animation using computed property - more efficient than array creation
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: animationValue)
     }
 }
 
