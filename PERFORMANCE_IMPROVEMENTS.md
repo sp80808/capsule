@@ -55,8 +55,12 @@ DispatchQueue.main.async {
 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isMuted)
 
-// After
-.animation(.spring(response: 0.3, dampingFraction: 0.7), value: [value, isMuted ? 1.0 : 0.0])
+// After - using computed property for efficient change detection
+private var animationValue: Double {
+    value + (isMuted ? 1000.0 : 0.0)
+}
+...
+.animation(.spring(response: 0.3, dampingFraction: 0.7), value: animationValue)
 ```
 
 ### 4. Aggressive Timer Frequency (AudioManager.swift)
@@ -91,13 +95,15 @@ timer?.tolerance = 0.5
 
 ```swift
 func windowDidBecomeKey(_ notification: Notification) {
-    AudioManager.shared.initialize()
+    AudioManager.shared.resumeMonitoring()
 }
 
 func windowDidResignKey(_ notification: Notification) {
     AudioManager.shared.stopMonitoring()
 }
 ```
+
+Note: `resumeMonitoring()` includes a guard to prevent duplicate timers if monitoring is already active.
 
 ### 6. Implicit ForEach Identity (ContentView.swift)
 

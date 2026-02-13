@@ -18,7 +18,9 @@ struct PillSlider: View {
     
     // Computed property for animation tracking - more efficient than creating arrays
     private var animationValue: Double {
-        // Combine value and muted state into a single hashable value for animation
+        // Combine value (0-1) and muted state into single trackable value
+        // Using 1000 as offset ensures muted state changes are always detectable
+        // even when volume is at maximum (1.0)
         value + (isMuted ? 1000.0 : 0.0)
     }
     
