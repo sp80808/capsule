@@ -15,6 +15,15 @@ struct PillSlider: View {
     
     private let height: CGFloat = 48
     private let handleSize: CGFloat = 36
+    // Offset to ensure muted state changes are detectable in animation tracking
+    private let mutedStateOffset: Double = 1000.0
+    
+    // Computed property for animation tracking - reduces animation modifier overhead
+    private var animationValue: Double {
+        // Combine value (0-1) and muted state into single trackable value
+        // Offset ensures muted state changes are always detectable even at max volume
+        value + (isMuted ? mutedStateOffset : 0.0)
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -81,8 +90,8 @@ struct PillSlider: View {
             }
         }
         .frame(height: height)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isMuted)
+        // Single animation modifier - reduces evaluation overhead vs separate modifiers
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: animationValue)
     }
 }
 
