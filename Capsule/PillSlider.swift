@@ -81,8 +81,8 @@ struct PillSlider: View {
             }
         }
         .frame(height: height)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isMuted)
+        // Combine animations for better performance - single modifier handles both value changes
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: [value, isMuted ? 1.0 : 0.0])
     }
 }
 

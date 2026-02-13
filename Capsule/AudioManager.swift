@@ -32,6 +32,12 @@ class AudioManager: ObservableObject {
         startMonitoring()
     }
     
+    func stopMonitoring() {
+        // Stop monitoring to save resources when app is not active
+        timer?.invalidate()
+        timer = nil
+    }
+    
     private func setupSampleApps() {
         // Sample apps for demonstration
         // In a real implementation, this would query actual running apps with audio
@@ -46,10 +52,13 @@ class AudioManager: ObservableObject {
     }
     
     private func startMonitoring() {
-        // Monitor audio apps every 2 seconds
-        timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+        // Monitor audio apps every 5 seconds (reduced frequency for better performance)
+        // Timer fires on main thread by default, so no need for additional dispatch
+        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.updateAudioApps()
         }
+        // Set tolerance to allow system to optimize power usage
+        timer?.tolerance = 0.5
     }
     
     private func updateAudioApps() {
@@ -58,17 +67,10 @@ class AudioManager: ObservableObject {
         // 2. Get per-app audio levels
         // 3. Update the audioApps array
         
-        // TEMPORARY: Simulate activity changes for demonstration purposes
-        // Replace this with actual Core Audio monitoring when driver is integrated
-        DispatchQueue.main.async {
-            for app in self.audioApps {
-                if app.isPlaying {
-                    // Randomly toggle playing state to simulate audio activity
-                    // TODO: Replace with actual audio level detection
-                    app.isPlaying = Bool.random()
-                }
-            }
-        }
+        // Note: Updates are already on main thread via Timer.scheduledTimer
+        // Removed unnecessary DispatchQueue.main.async to improve performance
+        // Removed random playing state updates that caused excessive UI redraws
+        // TODO: Replace with actual Core Audio monitoring when driver is integrated
     }
     
     func refreshAudioApps() {
