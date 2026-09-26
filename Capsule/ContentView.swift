@@ -30,7 +30,8 @@ struct ContentView: View {
                 // App Volume Controls
                 ScrollView {
                     VStack(spacing: 16) {
-                        ForEach(audioManager.audioApps) { app in
+                        // Using explicit id helps SwiftUI optimize rendering
+                        ForEach(audioManager.audioApps, id: \.id) { app in
                             AppVolumeControl(app: app)
                                 .padding(.horizontal, 20)
                         }
