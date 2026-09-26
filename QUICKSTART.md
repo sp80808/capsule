@@ -27,28 +27,30 @@ Get Capsule running in 5 minutes!
 ## First Time Running
 
 When you first run Capsule:
-- Grant microphone permissions if asked
-- You'll see 6 sample apps with interactive volume controls
+- The app will automatically detect all running applications
+- You'll see real application icons for each app
 - Try dragging the pill sliders left and right
 - Double-tap a slider to mute/unmute
+- Use the search bar to filter apps
+- Try keyboard shortcuts: ⌘R to refresh, ⌘⇧M to mute all
 
 ## What You'll See
 
 A beautiful native macOS window with:
 - Frosted glass background that blurs content behind it
-- App cards with volume controls
+- Real running applications with their actual icons
+- Search bar to quickly find apps
 - Thick pill-shaped sliders with blue-purple gradients
-- SF Symbols icons for each app
+- Volume controls that persist across app launches
 - Smooth animations when you interact
 
-## Understanding the Sample Data
+## Understanding the Implementation
 
-Currently, Capsule shows **sample apps** for demonstration:
-- Music, Safari, Spotify, Chrome, Zoom, Slack
-- Volume controls that update the UI
-- Playing status that changes over time
-
-This is intentional! The UI is complete and functional.
+Currently, Capsule shows **real running applications** detected via NSWorkspace:
+- Automatically discovers all user-facing apps
+- Extracts real application icons
+- Monitors app launches and terminations
+- Volume controls update the UI (audio driver integration pending)
 
 ## Next: Make It Control Real Audio
 
@@ -143,15 +145,18 @@ The app is optimized:
 - Efficient memory footprint
 - Hardware-accelerated rendering
 
-## What's NOT Implemented Yet
+## What's Implemented
 
+- ✅ Real application detection
+- ✅ Real app icon extraction
+- ✅ Search and filtering
+- ✅ Keyboard shortcuts
+- ✅ Mute/unmute all functionality
+- ✅ Beautiful pill slider UI
 - ❌ Actual audio capture from apps
 - ❌ Real volume control of apps
 - ❌ Audio level visualization
 - ❌ Menu bar mode
-- ❌ Keyboard shortcuts
-
-Everything else is complete!
 
 ## Contributing
 

@@ -18,6 +18,26 @@ struct CapsuleApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Refresh Apps") {
+                    AudioManager.shared.refreshAudioApps()
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                
+                Divider()
+                
+                Button("Mute All") {
+                    AudioManager.shared.muteAllApps()
+                }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
+                
+                Button("Unmute All") {
+                    AudioManager.shared.unmuteAllApps()
+                }
+                .keyboardShortcut("u", modifiers: [.command, .shift])
+            }
+        }
     }
 }
 

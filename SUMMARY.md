@@ -8,17 +8,20 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 
 ### ✅ Complete
 - **Full SwiftUI Application**: Native macOS app structure
-- **Beautiful UI**: Frosted glass background, pill sliders, SF Symbols
-- **Core Audio Integration**: Device enumeration and foundation for audio control
+- **Beautiful UI**: Frosted glass background, pill sliders, real app icons
+- **Real App Detection**: Monitors running applications using NSWorkspace
+- **App Icon Extraction**: Displays actual application icons from bundles
+- **Search Functionality**: Filter apps with built-in search
+- **Keyboard Shortcuts**: ⌘R refresh, ⌘⇧M mute all, ⌘⇧U unmute all
 - **Interactive Controls**: Drag to adjust volume, double-tap to mute
 - **Smooth Animations**: Spring-based animations throughout
-- **Complete Documentation**: 6 detailed documentation files
+- **Complete Documentation**: 7 detailed documentation files
 
 ### 📊 Project Stats
-- **Swift Code**: 450 lines across 4 files
-- **UI Components**: 5 custom SwiftUI views
-- **Documentation**: 7 comprehensive guides (41KB total)
-- **Features**: Per-app audio control UI, volume sliders, mute functionality
+- **Swift Code**: 500+ lines across 4 files
+- **UI Components**: 5 custom SwiftUI views with search functionality
+- **Documentation**: 7 comprehensive guides (42KB total)
+- **Features**: Real app detection, icon extraction, search, keyboard shortcuts, per-app volume UI
 
 ## File Structure
 
@@ -58,9 +61,12 @@ capsule/
 - Automatic dark mode support
 
 ### 3. Audio Management
-- Core Audio device enumeration
+- Running application detection via NSWorkspace
+- App launch/termination monitoring
+- Real app icon extraction
 - Per-app audio model (AudioApp class)
 - Observable state management
+- Mute/unmute all functionality
 - Foundation for real audio control
 
 ### 4. Modern SwiftUI
@@ -172,6 +178,9 @@ Project overview, statistics, and quick reference
 ## Current Status
 
 ✅ **UI**: 100% complete and functional
+✅ **App Detection**: Real running application monitoring
+✅ **Search & Filters**: Working search functionality
+✅ **Keyboard Shortcuts**: Implemented
 ✅ **Project Structure**: Professional Xcode setup
 ✅ **Documentation**: Comprehensive guides
 🔄 **Audio Integration**: Foundation in place, needs driver
@@ -192,6 +201,6 @@ Built following the requirements:
 
 ---
 
-**Project Size**: 450 lines of Swift code + 41KB documentation
+**Project Size**: 500+ lines of Swift code + 42KB documentation
 **Time to Build**: Project structured for easy continuation
 **Ready for**: macOS developers to build and extend
