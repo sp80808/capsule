@@ -2,12 +2,15 @@
 
 A beautiful native macOS audio mixer with per-app volume control, featuring a sleek Control Center-inspired design.
 
-![macOS](https://img.shields.io/badge/macOS-13.0+-blue.svg)
+![macOS](https://img.shields.io/badge/macOS-12.0+-blue.svg)
 ![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-Native-green.svg)
 
 ## Features
 
+- 🔉 **System Output Control**: Select default output and set hardware volume/mute when supported
+- 🧭 **Menu Bar Access**: Native menu bar panel on macOS 13+, AppKit status popover on macOS 12
+- 🖱️ **Tactile Scrolling**: Adjust pill sliders with trackpad or mouse wheel
 - 🎨 **Native macOS Design**: Control Center-inspired pill sliders with frosted glass effects
 - 🔊 **Per-App Audio Control**: Individual volume control for each application
 - 🎵 **Real-time Monitoring**: See which apps are currently playing audio
@@ -26,7 +29,7 @@ Capsule features a modern macOS UI built entirely with SwiftUI:
 
 ## Requirements
 
-- macOS 13.0 (Ventura) or later
+- macOS 12.0 (Monterey) or later
 - Xcode 15.0 or later (for building)
 
 ## Building
@@ -51,14 +54,19 @@ The app is structured with clean separation of concerns:
 - **CapsuleApp.swift**: Main app entry point and delegate
 - **ContentView.swift**: Main UI with frosted glass and app list
 - **PillSlider.swift**: Custom pill-shaped slider component
-- **AudioManager.swift**: Core Audio integration for audio device management
+- **AudioManager.swift**: Per-app mixer state (currently demonstration data)
+- **SystemOutputController.swift**: Core Audio output discovery, system volume/mute, device switching, property listeners
 
 ### Audio Integration
 
 The current implementation includes:
-- Core Audio framework integration for device enumeration
-- Foundation for per-app audio tapping (ready for eqMac driver integration)
-- Sample app data for UI demonstration
+- Live Core Audio output enumeration and default-output routing
+- Hardware master volume/mute for devices that expose writable Core Audio properties (not all interfaces do)
+- Virtual main volume preference, main scalar fallback, and writable channel 1/2 fallback
+- Property-listener updates for external volume and device changes; refresh is suspended while dragging
+- Per-app audio tapping remains a future integration; the per-app mixer currently uses demonstration data
+
+**Note:** Recognising eqMac by device name/UID only displays a status indicator. It does not provide access to eqMac's DSP or per-app routing API. Core Audio hardware volume does not imply software per-app mixing. Test device switching and permissions on physical macOS machines before shipping.
 
 ### Future Enhancements
 
@@ -71,7 +79,8 @@ To integrate with eqMac driver for actual per-app audio tapping:
 
 ## Usage
 
-- **Adjust Volume**: Drag the pill slider left or right
+- **System Output**: Choose an output using the device menu; hardware volume and mute only work when supported
+- **Adjust Volume**: Drag the pill slider or use trackpad / mouse wheel scrolling
 - **Mute/Unmute**: Double-tap on a slider
 - **Refresh Apps**: Click the refresh button in the header
 
