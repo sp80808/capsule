@@ -11,6 +11,7 @@
 		A1000002000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002000000000000001 /* ContentView.swift */; };
 		A1000003000000000000001 /* PillSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003000000000000001 /* PillSlider.swift */; };
 		A1000004000000000000001 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004000000000000001 /* AudioManager.swift */; };
+		A1000006000000000000001 /* SystemOutputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008000000000000001 /* SystemOutputController.swift */; };
 		A1000005000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000005000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -20,6 +21,7 @@
 		A2000002000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A2000003000000000000001 /* PillSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PillSlider.swift; sourceTree = "<group>"; };
 		A2000004000000000000001 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
+		A2000008000000000000001 /* SystemOutputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemOutputController.swift; sourceTree = "<group>"; };
 		A2000005000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000006000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A2000007000000000000001 /* Capsule.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Capsule.entitlements; sourceTree = "<group>"; };
@@ -51,6 +53,7 @@
 				A2000002000000000000001 /* ContentView.swift */,
 				A2000003000000000000001 /* PillSlider.swift */,
 				A2000004000000000000001 /* AudioManager.swift */,
+				A2000008000000000000001 /* SystemOutputController.swift */,
 				A2000005000000000000001 /* Assets.xcassets */,
 				A2000006000000000000001 /* Info.plist */,
 				A2000007000000000000001 /* Capsule.entitlements */,
@@ -138,6 +141,7 @@
 				A1000002000000000000001 /* ContentView.swift in Sources */,
 				A1000003000000000000001 /* PillSlider.swift in Sources */,
 				A1000004000000000000001 /* AudioManager.swift in Sources */,
+				A1000006000000000000001 /* SystemOutputController.swift in Sources */,
 				A1000001000000000000001 /* CapsuleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -198,7 +202,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -255,7 +259,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;

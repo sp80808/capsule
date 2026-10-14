@@ -27,6 +27,15 @@ struct ContentView: View {
                     .opacity(0.3)
                     .padding(.horizontal, 20)
                 
+                // Output routing and hardware master volume, distinct from per-app controls.
+                SystemOutputControl(output: .shared)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+
+                Divider()
+                    .opacity(0.3)
+                    .padding(.horizontal, 20)
+
                 // App Volume Controls
                 ScrollView {
                     VStack(spacing: 16) {
@@ -145,5 +154,90 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
             .frame(width: 400, height: 600)
+    }
+}
+
+
+// Hardware master controls. The menu bar reuses this panel, not the entire app mixer.
+struct SystemOutputControl: View {
+    @ObservedObject var output: SystemOutputController
+
+    private var selected: SystemOutputController.OutputDevice? {
+        output.devices.first { $0.id == output.currentDeviceID }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Text("System Output")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+
+                if selected?.isEqMac == true {
+                    Text("eqMac")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.green.opacity(0.14)))
+                }
+
+                Spacer()
+
+                Menu {
+                    ForEach(output.devices) { device in
+                        Button {
+                            output.selectOutput(device.id)
+                        } label: {
+                            Label(device.name,
+                                  systemImage: device.id == output.currentDeviceID
+                                  ? "checkmark.circle.fill" : "speaker.wave.2")
+                        }
+                    }
+                    if output.devices.isEmpty {
+                        Text("No outputs available")
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "airplayaudio")
+                        Text(output.currentDeviceName)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9))
+                    }
+                    .font(.system(size: 11, weight: .medium))
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize(horizontal: false, vertical: true)
+                .help("Select default audio output")
+            }
+
+            PillSlider(
+                value: $output.volume,
+                isMuted: $output.isMuted,
+                canMute: output.supportsMute,
+                onValueChanged: { output.setVolume($0) },
+                onMuteChanged: { output.setMuted($0) },
+                onScrubbingChanged: { output.isScrubbing = $0 }
+            )
+            .disabled(!output.supportsVolume)
+
+            if !output.supportsVolume {
+                Text("Hardware volume is unavailable for this output.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            if let message = output.errorMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.primary.opacity(0.055))
+        )
     }
 }
