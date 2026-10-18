@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Syntax, cross-reference and project checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tree-sitter
+        run: pip install tree-sitter tree-sitter-swift
+
+      - name: Swift syntax
+        run: python3 Scripts/swift_syntax_check.py
+
+      - name: Member cross-reference
+        run: python3 Scripts/swift_cross_reference.py
+
+      - name: Xcode project consistency
+        run: python3 Scripts/check_xcodeproj.py
+
+  build:
+    name: Build (macOS)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build Capsule
+        run: >
+          xcodebuild
+          -project Capsule.xcodeproj
+          -target Capsule
+          -configuration Debug
+          build
+          CODE_SIGN_IDENTITY=""
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGNING_ALLOWED=NO

@@ -7,38 +7,56 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 ## What's Implemented
 
 ### ✅ Complete
-- **Full SwiftUI Application**: Native macOS app structure
-- **Beautiful UI**: Frosted glass background, pill sliders, SF Symbols
-- **Core Audio Integration**: Device enumeration and foundation for audio control
-- **Interactive Controls**: Drag to adjust volume, double-tap to mute
-- **Smooth Animations**: Spring-based animations throughout
-- **Complete Documentation**: 6 detailed documentation files
+- **Menu bar mixer**: status item + popover mixer + detachable window
+- **Right-click context menu** on every app: show in mixer, mute, mute all others
+  (solo), volume presets, activate, hide
+- **Keyboard shortcuts**: ⌘M, ⌥⌘M, ⇧⌘M, ⌃⌘M, ⌥↑/⌥↓, ⇧⌘O
+- **Core Audio**: output device enumeration and switching, master volume/mute
+- **Persistence**: per-app volume and mute survive relaunch
+- **Beautiful UI**: frosted glass, pill sliders, level meters, adaptive colours
+- **Accessibility**: labelled sliders with adjustable actions
+
+> Playback *levels* are still simulated (Demo Mode) — per-app capture needs the
+> audio driver. See [AUDIT.md](AUDIT.md).
 
 ### 📊 Project Stats
-- **Swift Code**: 450 lines across 4 files
-- **UI Components**: 5 custom SwiftUI views
-- **Documentation**: 7 comprehensive guides (41KB total)
-- **Features**: Per-app audio control UI, volume sliders, mute functionality
+- **Swift Code**: ~2,430 lines across 14 files
+- **UI Components**: mixer, app row, context menu, pill slider, level meter,
+  settings
+- **Checks**: 3 scripts (syntax, member cross-reference, project consistency) + CI
 
 ## File Structure
 
 ```
 capsule/
-├── Capsule.xcodeproj/              # Xcode project
+├── Capsule.xcodeproj/              # Xcode project (14 sources registered)
 ├── Capsule/
-│   ├── CapsuleApp.swift           # 80 lines - App entry & delegate
-│   ├── ContentView.swift          # 150 lines - Main UI with cards
-│   ├── PillSlider.swift           # 110 lines - Custom pill slider
-│   ├── AudioManager.swift         # 180 lines - Audio management
-│   ├── Assets.xcassets/           # Icons and colors
-│   ├── Info.plist                 # App configuration
-│   └── Capsule.entitlements       # Permissions
+│   ├── CapsuleApp.swift            # App entry, Settings scene, app delegate
+│   ├── StatusBarController.swift   # Status item, popover, window, status menu
+│   ├── MixerPresenter.swift        # SwiftUI → AppKit "show mixer" bridge
+│   ├── AudioManager.swift          # Apps, levels, mute/solo, focus, devices
+│   ├── AudioApp.swift              # Per-app model with stable identity
+│   ├── AudioDeviceService.swift    # Core Audio devices + master volume
+│   ├── VolumeStore.swift           # UserDefaults persistence
+│   ├── MixerView.swift             # The mixer (popover + window)
+│   ├── AppRowView.swift            # App card, level meter, context menu
+│   ├── PillSlider.swift            # Accessible pill slider
+│   ├── CapsuleCommands.swift       # Menu commands / shortcuts
+│   ├── SettingsView.swift          # Settings window
+│   ├── ContentView.swift           # Detached window content
+│   ├── Theme.swift                 # Colours, metrics, VisualEffectBlur
+│   ├── Assets.xcassets/            # Icons and colors
+│   ├── Info.plist                  # App configuration
+│   └── Capsule.entitlements        # Permissions
+├── Scripts/                        # Runnable checks (see AUDIT.md)
+├── .github/workflows/ci.yml        # Linux checks + macOS build
 ├── README.md                       # Project overview
+├── AUDIT.md                        # Audit, fixes and roadmap
 ├── BUILD.md                        # Build instructions
 ├── DESIGN.md                       # UI specifications
 ├── MOCKUP.md                       # Visual mockup
-├── AUDIO_INTEGRATION.md           # Core Audio guide
-└── EQMAC_INTEGRATION.md           # eqMac integration guide
+├── AUDIO_INTEGRATION.md            # Core Audio guide
+└── EQMAC_INTEGRATION.md            # eqMac integration guide
 ```
 
 ## Key Features
@@ -96,17 +114,21 @@ capsule/
 - [ ] Add mute functionality to audio driver
 
 ### Phase 3: Enhancements
-- [ ] Real-time audio level visualization
-- [ ] Extract app icons from bundles
-- [ ] Add menu bar mode
-- [ ] Implement keyboard shortcuts
-- [ ] Add app filtering/search
+- [x] Real-time audio level visualization (simulated until the driver lands)
+- [x] Extract app icons from bundles (`NSRunningApplication.icon`)
+- [x] Add menu bar mode
+- [x] Implement keyboard shortcuts
+- [x] Add app filtering/search
+- [ ] Global hotkeys that work while Capsule is not frontmost
+- [ ] Per-tab control via a browser extension + native messaging host
+
+See [AUDIT.md](AUDIT.md) for the full roadmap.
 
 ## Technical Highlights
 
 ### SwiftUI Best Practices
 - Custom `NSViewRepresentable` for native AppKit views
-- Proper state management with `@StateObject` and `@ObservedObject`
+- Proper state management with `@ObservedObject` over a shared store
 - Reusable components with `@Binding`
 - Native gesture handling
 

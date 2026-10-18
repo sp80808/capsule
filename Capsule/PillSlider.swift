@@ -2,99 +2,129 @@
 //  PillSlider.swift
 //  Capsule
 //
-//  Custom pill-shaped slider with thick design
+//  Custom pill-shaped slider with thick design.
 //
 
+import AppKit
 import SwiftUI
 
 struct PillSlider: View {
+
     @Binding var value: Double
     @Binding var isMuted: Bool
-    
+
+    /// Name used in the accessibility label, e.g. the app or "System output".
+    var accessibilityName: String = "Volume"
+
     @State private var isDragging = false
-    
-    private let height: CGFloat = 48
-    private let handleSize: CGFloat = 36
-    
+
+    private let height: CGFloat = 44
+    private let handleSize: CGFloat = 32
+
+    private var clamped: Double { min(max(value, 0), 1) }
+
     var body: some View {
-        GeometryReader { geometry in
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let fillWidth = max(handleSize, CGFloat(clamped) * width)
+
             ZStack(alignment: .leading) {
-                // Background pill
+                // Track
                 Capsule()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(CapsuleTheme.track)
                     .frame(height: height)
-                
-                // Active fill
-                if !isMuted {
+
+                // Filled portion
+                if !isMuted && clamped > 0.001 {
                     Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.blue.opacity(0.6),
-                                    Color.purple.opacity(0.6)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: max(handleSize, CGFloat(value) * geometry.size.width), height: height)
+                        .fill(CapsuleTheme.fillGradient)
+                        .frame(width: fillWidth, height: height)
                 }
-                
+
                 // Handle
                 HStack {
                     Spacer()
-                    
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: handleSize, height: handleSize)
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        
-                        Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(isMuted ? .gray : .blue)
-                    }
+                    handle
                 }
-                .frame(width: max(handleSize, CGFloat(value) * geometry.size.width), alignment: .trailing)
+                .frame(width: fillWidth, alignment: .trailing)
             }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        isDragging = true
-                        let newValue = min(max(0, gesture.location.x / geometry.size.width), 1)
-                        value = newValue
-                        
-                        // Unmute if dragging
-                        if isMuted && newValue > 0 {
-                            isMuted = false
-                        }
-                    }
-                    .onEnded { _ in
-                        isDragging = false
-                    }
-            )
+            .contentShape(Capsule())
+            .gesture(dragGesture(width: width))
             .onTapGesture(count: 2) {
-                // Double tap to toggle mute
-                withAnimation(.spring(response: 0.3)) {
-                    isMuted.toggle()
-                }
+                withAnimation(.spring(response: 0.3)) { isMuted.toggle() }
             }
         }
         .frame(height: height)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: value)
+        // Suppress the spring while dragging so the fill tracks the pointer
+        // instead of lagging behind it.
+        .animation(isDragging ? nil : .spring(response: 0.3, dampingFraction: 0.7), value: value)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isMuted)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("\(accessibilityName) volume"))
+        .accessibilityValue(Text(isMuted ? "muted, \(percent) percent" : "\(percent) percent"))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                isMuted = false
+                value = min(1, clamped + 0.05)
+            case .decrement:
+                value = max(0, clamped - 0.05)
+            @unknown default:
+                break
+            }
+        }
+        .accessibilityAction(named: Text(isMuted ? "Unmute" : "Mute")) {
+            isMuted.toggle()
+        }
+    }
+
+    private var percent: Int { Int((clamped * 100).rounded()) }
+
+    private var handle: some View {
+        ZStack {
+            Circle()
+                .fill(CapsuleTheme.handle)
+                .frame(width: handleSize, height: handleSize)
+                .shadow(color: .black.opacity(0.25), radius: 3, x: 0, y: 1)
+
+            Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(isMuted ? .red : CapsuleTheme.handleGlyph)
+        }
+    }
+
+    /// Drag to set the level. Hold ⌥ for 1% steps, ⇧ for 10% steps.
+    private func dragGesture(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { gesture in
+                if !isDragging { isDragging = true }
+                guard width > 0 else { return }
+
+                var next = Double(gesture.location.x / width)
+                next = min(max(next, 0), 1)
+
+                let modifiers = NSEvent.modifierFlags
+                if modifiers.contains(.option) {
+                    next = (next * 100).rounded() / 100
+                } else if modifiers.contains(.shift) {
+                    next = (next * 10).rounded() / 10
+                }
+
+                value = next
+                if isMuted && next > 0.001 { isMuted = false }
+            }
+            .onEnded { _ in
+                isDragging = false
+            }
     }
 }
 
-struct PillSlider_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 20) {
-            PillSlider(value: .constant(0.7), isMuted: .constant(false))
-            PillSlider(value: .constant(0.3), isMuted: .constant(false))
-            PillSlider(value: .constant(0.5), isMuted: .constant(true))
-        }
-        .padding()
-        .frame(width: 400)
-        .background(Color.black)
+#Preview {
+    VStack(spacing: 20) {
+        PillSlider(value: .constant(0.7), isMuted: .constant(false), accessibilityName: "Music")
+        PillSlider(value: .constant(0.3), isMuted: .constant(false), accessibilityName: "Safari")
+        PillSlider(value: .constant(0.5), isMuted: .constant(true), accessibilityName: "Spotify")
     }
+    .padding()
+    .frame(width: 400)
 }
