@@ -10,7 +10,9 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 - **Menu bar mixer**: status item + popover mixer + detachable window
 - **Right-click context menu** on every app: show in mixer, mute, mute all others
   (solo), volume presets, activate, hide
-- **Keyboard shortcuts**: ⌘M, ⌥⌘M, ⇧⌘M, ⌃⌘M, ⌥↑/⌥↓, ⇧⌘O
+- **Keyboard shortcuts**: ⌘M, ⌥⌘M, ⇧⌘M, ⌃⌘M, ⌥↑/⌥↓, ⇧⌘O — plus opt-in
+  system-wide hotkeys (⌃⌥⌘M and friends) via Carbon
+- **Timed mutes**: mute an app for 5/15/30/60 minutes with a live countdown
 - **Core Audio**: output device enumeration and switching, master volume/mute
 - **Persistence**: per-app volume and mute survive relaunch
 - **Beautiful UI**: frosted glass, pill sliders, level meters, adaptive colours
@@ -20,7 +22,7 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 > audio driver. See [AUDIT.md](AUDIT.md).
 
 ### 📊 Project Stats
-- **Swift Code**: ~2,430 lines across 14 files
+- **Swift Code**: ~2,790 lines across 15 files
 - **UI Components**: mixer, app row, context menu, pill slider, level meter,
   settings
 - **Checks**: 3 scripts (syntax, member cross-reference, project consistency) + CI
@@ -29,7 +31,7 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 
 ```
 capsule/
-├── Capsule.xcodeproj/              # Xcode project (14 sources registered)
+├── Capsule.xcodeproj/              # Xcode project (15 sources registered)
 ├── Capsule/
 │   ├── CapsuleApp.swift            # App entry, Settings scene, app delegate
 │   ├── StatusBarController.swift   # Status item, popover, window, status menu
@@ -42,6 +44,7 @@ capsule/
 │   ├── AppRowView.swift            # App card, level meter, context menu
 │   ├── PillSlider.swift            # Accessible pill slider
 │   ├── CapsuleCommands.swift       # Menu commands / shortcuts
+│   ├── GlobalHotKeys.swift         # System-wide hotkeys (Carbon)
 │   ├── SettingsView.swift          # Settings window
 │   ├── ContentView.swift           # Detached window content
 │   ├── Theme.swift                 # Colours, metrics, VisualEffectBlur
@@ -119,7 +122,8 @@ capsule/
 - [x] Add menu bar mode
 - [x] Implement keyboard shortcuts
 - [x] Add app filtering/search
-- [ ] Global hotkeys that work while Capsule is not frontmost
+- [x] Global hotkeys that work while Capsule is not frontmost (opt-in)
+- [x] Timed mutes with countdown
 - [ ] Per-tab control via a browser extension + native messaging host
 
 See [AUDIT.md](AUDIT.md) for the full roadmap.

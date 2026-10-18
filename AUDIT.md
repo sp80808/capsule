@@ -2,7 +2,8 @@
 
 Audit performed 2026-10-18 against `4ce661e` on branch `arena/e0c40db0-capsule`.
 
-Everything in **Fixed** below is already applied in this branch. Everything in
+Everything in **Fixed** below is already applied in this branch (last updated
+2026-10-19: global hotkeys, timed mutes, reduce-motion support). Everything in
 **Open** and **Roadmap** is a proposal.
 
 ---
@@ -75,6 +76,31 @@ keyboard shortcuts now act on it, the ring highlights it, and the list scrolls
 to it. The focus request is sent twice (`AudioManager.requestFocus` then
 `replayFocus` on the next run loop tick) so a popover whose scroll view did not
 exist a moment ago still lands on the right row.
+
+### Global hotkeys (opt-in)
+
+`GlobalHotKeys.swift` registers system-wide chords through the Carbon
+`RegisterEventHotKey` API, so the mixer can be driven from any app instead of
+only while Capsule is frontmost. Off by default — grabbing chords everywhere
+should be a choice — and toggled in Settings → Global shortcuts:
+
+| Chord | Action |
+| --- | --- |
+| ⌃⌥⌘M | Mute / unmute the selected app |
+| ⌃⌥⌘⇧M | Mute all other apps (solo) / restore |
+| ⌃⌥⌘U | Unmute all apps |
+| ⌃⌥⌘C | Show the menu bar mixer |
+
+⌃⌥⌘ was chosen deliberately: ⌘M is "minimise" in almost every app, and ⌃⌥ is
+the VoiceOver modifier prefix, so a plain ⌘M/⌃⌘M binding would break other
+software.
+
+### Timed mutes
+
+"Mute for ▸ 5 / 15 / 30 / 60 minutes" in the app context menu silences an app
+and schedules its return. The row counts down ("Muted · 4:59 left") and the app
+unmutes itself; muting or unmuting by hand, or Mute All / Unmute All, cancels
+the timer. Only one 1-second timer runs, and only while a countdown is active.
 
 ### Working shortcuts
 
@@ -176,16 +202,17 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
 
 ### B. Mixer UX
 
-- **B1. Global hotkeys.** ⌘M/⌥⌘M only work while Capsule is frontmost. A Carbon
-  `RegisterEventHotKey` (or `CGEvent` tap) service would make them system-wide —
-  the highest-value follow-up to this branch.
+- **B1. ~~Global hotkeys.~~ Done** (Carbon `RegisterEventHotKey`, opt-in in
+  Settings). Remaining work: make the chords user-configurable with a key
+  recorder, and surface conflicts when registration fails.
 - **B2. Per-tab control.** The "mute that tab" wording points here: per-app rows
   are as fine-grained as Core Audio gets, but a Safari/Chrome extension + Native
   Messaging host can enumerate tabs and expose each one as a row. The context
   menu, solo and shortcut machinery in this branch works unchanged on those
   rows — only `AudioApp.id` becomes a tab id.
-- **B3. Temporary mutes.** "Mute for 5/15/60 minutes", "mute until I next
-  unmute", with a countdown ring on the row.
+- **B3. ~~Temporary mutes.~~ Mostly done** — "Mute for 5/15/30/60 minutes" with
+  a live countdown. Remaining: "mute until I next unmute", per-app defaults, and
+  a countdown ring rather than text.
 - **B4. Pin & reorder.** Drag rows to pin; pinned apps survive scrolling and
   show in a compact top section.
 - **B5. App groups.** "Browsers", "Calls", "Games" with a group fader that
@@ -220,7 +247,8 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
   `.popover`/`.sidebar` to match the system appearance.
 - **D2. App accent colours** derived from the app icon instead of one gradient
   for every fallback row.
-- **D3. Motion off-switch** honouring `accessibilityDisplayShouldReduceMotion`.
+- **D3. ~~Motion off-switch.~~ Done** — the slider spring and the row flash
+  honour `accessibilityReduceMotion`.
 - **D4. Wider popover option** (Settings) for long app names.
 - **D5. Localisation** — `String(localized:)` everywhere, `.xcstrings` catalog,
   and localised shortcut hints.

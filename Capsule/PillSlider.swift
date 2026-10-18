@@ -16,6 +16,8 @@ struct PillSlider: View {
     /// Name used in the accessibility label, e.g. the app or "System output".
     var accessibilityName: String = "Volume"
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var isDragging = false
 
     private let height: CGFloat = 44
@@ -56,9 +58,10 @@ struct PillSlider: View {
         }
         .frame(height: height)
         // Suppress the spring while dragging so the fill tracks the pointer
-        // instead of lagging behind it.
-        .animation(isDragging ? nil : .spring(response: 0.3, dampingFraction: 0.7), value: value)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isMuted)
+        // instead of lagging behind it, and drop animation entirely for users
+        // who asked macOS to reduce motion.
+        .animation(isDragging || reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.7), value: value)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.7), value: isMuted)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("\(accessibilityName) volume"))
         .accessibilityValue(Text(isMuted ? "muted, \(percent) percent" : "\(percent) percent"))

@@ -75,9 +75,34 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+
+            Section("Global shortcuts") {
+                Toggle(isOn: $manager.globalShortcutsEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Enable system-wide shortcuts")
+                        Text("Work from any app, not just while Capsule is frontmost. They are opt-in because they reserve these chords everywhere.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                ForEach(HotKeyAction.allCases) { action in
+                    shortcutRow(action.title, action.display, enabled: manager.globalShortcutsEnabled)
+                }
+
+                Text("Chords use ⌃⌥⌘ on purpose: ⌘M is “minimise” in most apps and ⌃⌥ is the VoiceOver prefix. They act on the app selected in the mixer, or on the loudest app that is playing when nothing is selected.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section("Timed mutes") {
+                Text("Right-click an app and choose “Mute for” to silence it for 5, 15, 30 or 60 minutes. The row counts down and the app unmutes itself; muting or unmuting by hand cancels the timer.")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 560)
+        .frame(width: 480, height: 640)
     }
 
     private var deviceSelection: Binding<AudioDeviceID> {
@@ -90,15 +115,16 @@ struct SettingsView: View {
         )
     }
 
-    private func shortcutRow(_ description: String, _ keys: String) -> some View {
+    private func shortcutRow(_ description: String, _ keys: String, enabled: Bool = true) -> some View {
         HStack {
             Text(description)
                 .font(.callout)
             Spacer()
             Text(keys)
                 .font(.system(.callout, design: .rounded))
-                .foregroundColor(.secondary)
+                .foregroundColor(enabled ? .secondary : Color.secondary.opacity(0.4))
         }
+        .opacity(enabled ? 1 : 0.55)
     }
 }
 

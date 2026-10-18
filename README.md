@@ -14,8 +14,10 @@ control and a Control Center-inspired design.
 - 🖱️ **Right-click any app** for mute, solo, volume presets and "show me this
   app in the mixer"
 - ⌨️ **Keyboard shortcuts** that work while Capsule is frontmost (⌘M, ⌥⌘M, ⇧⌘M,
-  ⌥↑/⌥↓)
+  ⌥↑/⌥↓), plus **opt-in system-wide hotkeys** (⌃⌥⌘M) that work from any app
 - 🔇 **Solo / "mute all others"** that remembers what it silenced and restores it
+- ⏱️ **Timed mutes**: mute an app for 5/15/30/60 minutes and it comes back on its
+  own, with a countdown on the row
 - 🎚️ **Output device switching** and **master volume + mute**, straight from
   Core Audio
 - 🎨 **Native macOS design**: pill sliders, frosted glass, adaptive colours
@@ -45,9 +47,15 @@ control and a Control Center-inspired design.
   | Volume ±5% | ⌥↑ / ⌥↓ |
 
   "Show in Menu Bar Mixer" opens the popover, scrolls to that app, highlights it
-  and makes it the target of the shortcuts above.
+  and makes it the target of the shortcuts above. The menu also offers
+  **Mute for ▸ 5/15/30/60 minutes**, which counts down on the row and unmutes
+  itself.
 - **Status item right-click**: mute/unmute, mute all others, unmute all, output
   device, Settings, Quit
+- **System-wide hotkeys** (Settings → Global shortcuts, off by default): ⌃⌥⌘M
+  mute the selected app, ⌃⌥⌘⇧M solo, ⌃⌥⌘U unmute all, ⌃⌥⌘C show the mixer.
+  They use ⌃⌥⌘ because ⌘M is "minimise" everywhere and ⌃⌥ is the VoiceOver
+  prefix.
 
 ## Design
 
@@ -90,6 +98,7 @@ xcodebuild -project Capsule.xcodeproj -target Capsule -configuration Debug build
 | `AppRowView.swift` | App card, level meter and the right-click context menu |
 | `PillSlider.swift` | Custom slider with accessibility support |
 | `CapsuleCommands.swift` | Main-menu commands / keyboard shortcuts |
+| `GlobalHotKeys.swift` | System-wide hotkeys (Carbon) |
 | `SettingsView.swift` | Settings window |
 | `Theme.swift` | Shared colours, metrics, `VisualEffectBlur` |
 

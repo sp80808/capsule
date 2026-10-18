@@ -17,6 +17,10 @@ struct AppRowView: View {
 
     @State private var isFlashing = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var motionAllowed: Bool { !reduceMotion }
+
     private var isFocused: Bool { manager.focusedAppID == app.id }
     private var isSoloed: Bool { manager.soloedAppID == app.id }
 
@@ -35,7 +39,10 @@ struct AppRowView: View {
                 .strokeBorder(isFocused ? CapsuleTheme.focusRing : CapsuleTheme.cardBorder, lineWidth: isFocused ? 2 : 1)
         )
         .scaleEffect(isFlashing ? 1.015 : 1)
-        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isFlashing)
+        .animation(
+            motionAllowed ? .spring(response: 0.35, dampingFraction: 0.7) : nil,
+            value: isFlashing
+        )
         .onChange(of: manager.focusToken) { _ in flashIfFocused() }
         .appContextMenu(app: app, manager: manager)
         .accessibilityElement(children: .contain)
@@ -134,7 +141,12 @@ struct AppRowView: View {
 
     private var statusText: String {
         if isSoloed { return "Soloed" }
-        if app.isMuted { return "Muted" }
+        if app.isMuted {
+            if let countdown = manager.countdownText(app) {
+                return "Muted · \(countdown) left"
+            }
+            return "Muted"
+        }
         if app.volume <= 0.001 { return "Off" }
         return app.isPlaying ? "Playing" : "Idle"
     }
@@ -208,6 +220,28 @@ struct AppContextMenu: View {
             Label("Unmute All Apps", systemImage: "speaker.wave.3.fill")
         }
         .keyboardShortcut("m", modifiers: [.command, .shift])
+
+        Divider()
+
+        Menu("Mute for") {
+            ForEach([5, 15, 30, 60], id: \.self) { minutes in
+                Button {
+                    manager.mute(app, forMinutes: Double(minutes))
+                } label: {
+                    Text(minutes == 60 ? "1 hour" : "\(minutes) minutes")
+                }
+            }
+
+            if manager.hasTimedMute(app) {
+                Divider()
+
+                Button {
+                    manager.cancelTimedMute(app)
+                } label: {
+                    Label("Cancel Timed Mute", systemImage: "timer")
+                }
+            }
+        }
 
         Divider()
 

@@ -50,6 +50,22 @@ final class AudioManager: ObservableObject {
         }
     }
 
+    /// System-wide hot keys (⌃⌥⌘M and friends), opt-in from Settings.
+    @Published var globalShortcutsEnabled: Bool {
+        didSet {
+            guard globalShortcutsEnabled != oldValue else { return }
+            store.globalShortcutsEnabled = globalShortcutsEnabled
+            syncGlobalShortcuts()
+        }
+    }
+
+    /// When a timed mute expires, keyed by app id.
+    @Published private(set) var muteExpiries: [AudioApp.ID: Date] = [:]
+
+    /// Ticks once a second while a countdown is running, so rows can repaint
+    /// their remaining time.
+    @Published private(set) var countdownTick: Int = 0
+
     /// SF Symbol for the menu bar item, reflecting the current mute state.
     @Published private(set) var statusGlyph: String = "speaker.wave.2.fill"
 
@@ -83,6 +99,7 @@ final class AudioManager: ObservableObject {
     private var subscriptions: [AudioApp.ID: [AnyCancellable]] = [:]
     private var workspaceObservers: [NSObjectProtocol] = []
     private var monitorTimer: Timer?
+    private var expiryTimer: Timer?
     private var demoTick: Int = 0
     /// Apps silenced by the current solo, so "Restore" can undo it exactly.
     private var silencedBySolo: Set<AudioApp.ID> = []
@@ -91,6 +108,7 @@ final class AudioManager: ObservableObject {
     init(store: VolumeStore = .shared) {
         self.store = store
         self.demoMode = store.demoMode
+        self.globalShortcutsEnabled = store.globalShortcutsEnabled
         self.hiddenAppIDs = store.hiddenAppIDs()
     }
 
@@ -103,6 +121,7 @@ final class AudioManager: ObservableObject {
         refreshApps()
         refreshDevices()
         startMonitoring()
+        syncGlobalShortcuts()
 
         let workspace = NSWorkspace.shared.notificationCenter
         let notifications: [NSNotification.Name] = [
@@ -124,6 +143,11 @@ final class AudioManager: ObservableObject {
     func shutdown() {
         monitorTimer?.invalidate()
         monitorTimer = nil
+
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+
+        GlobalHotKeyCenter.shared.uninstall()
 
         let workspace = NSWorkspace.shared.notificationCenter
         workspaceObservers.forEach { workspace.removeObserver($0) }
@@ -286,6 +310,8 @@ final class AudioManager: ObservableObject {
 
         // A manual mute change invalidates the solo's undo memory for this app.
         silencedBySolo.remove(app.id)
+        // Manually unmuting cancels a scheduled unmute.
+        if !muted { muteExpiries.removeValue(forKey: app.id) }
         if soloedAppID == app.id { soloedAppID = nil }
 
         updateStatusGlyph()
@@ -297,14 +323,97 @@ final class AudioManager: ObservableObject {
 
     func muteAll() {
         clearSolo()
+        muteExpiries.removeAll()
+        stopExpiryTimer()
         apps.forEach { $0.isMuted = true }
         updateStatusGlyph()
     }
 
     func unmuteAll() {
         clearSolo()
+        muteExpiries.removeAll()
+        stopExpiryTimer()
         apps.forEach { $0.isMuted = false }
         updateStatusGlyph()
+    }
+
+    // MARK: - Timed mutes
+
+    /// Mutes an app and schedules it to come back after `minutes`.
+    func mute(_ app: AudioApp, forMinutes minutes: Double) {
+        setMuted(true, for: app)
+        muteExpiries[app.id] = Date().addingTimeInterval(minutes * 60)
+        startExpiryTimerIfNeeded()
+    }
+
+    func cancelTimedMute(_ app: AudioApp) {
+        muteExpiries.removeValue(forKey: app.id)
+        if muteExpiries.isEmpty { stopExpiryTimer() }
+    }
+
+    func hasTimedMute(_ app: AudioApp) -> Bool {
+        muteExpiries[app.id] != nil
+    }
+
+    func remainingSeconds(_ app: AudioApp) -> Int? {
+        guard let expiry = muteExpiries[app.id] else { return nil }
+        return max(0, Int(expiry.timeIntervalSinceNow.rounded(.up)))
+    }
+
+    /// "4:59" style countdown, or nil when the app has no timed mute.
+    /// Reads `countdownTick` so it re-evaluates once a second.
+    func countdownText(_ app: AudioApp) -> String? {
+        _ = countdownTick
+        guard let remaining = remainingSeconds(app) else { return nil }
+        return String(format: "%d:%02d", remaining / 60, remaining % 60)
+    }
+
+    private func startExpiryTimerIfNeeded() {
+        guard expiryTimer == nil else { return }
+        expiryTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            self?.tickExpiries()
+        }
+    }
+
+    private func stopExpiryTimer() {
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+    }
+
+    private func tickExpiries() {
+        // Snapshot first: mutating the dictionary while iterating it would trap
+        // on exclusivity.
+        let due = muteExpiries.filter { $0.value <= Date() }.map { $0.key }
+        for id in due {
+            muteExpiries.removeValue(forKey: id)
+            if let app = apps.first(where: { $0.id == id }) {
+                setMuted(false, for: app)
+            }
+        }
+        if muteExpiries.isEmpty {
+            stopExpiryTimer()
+        } else {
+            countdownTick &+= 1
+        }
+    }
+
+    // MARK: - Global shortcuts
+
+    /// (Re)binds the system-wide hot keys to the current actions.
+    func syncGlobalShortcuts() {
+        guard globalShortcutsEnabled else {
+            GlobalHotKeyCenter.shared.uninstall()
+            return
+        }
+
+        GlobalHotKeyCenter.shared.install([
+            .muteSelected: { [weak self] in self?.toggleMuteFromHotKey() },
+            .soloSelected: { [weak self] in self?.toggleSoloFromHotKey() },
+            .unmuteAll: { [weak self] in self?.unmuteAll() },
+            .showMixer: { [weak self] in
+                MixerPresenter.shared.showMixer(focusing: self?.focusedApp)
+            }
+        ])
     }
 
     // MARK: - Solo ("mute all but this")
@@ -372,6 +481,26 @@ final class AudioManager: ObservableObject {
     var shortcutTarget: AudioApp? {
         if let focusedApp { return focusedApp }
         return visibleApps.count == 1 ? visibleApps.first : nil
+    }
+
+    /// Target for the system-wide hotkeys. Falls back to the loudest app that is
+    /// currently playing, so a global "shut that up" chord does something
+    /// sensible even when no row is selected.
+    var hotKeyTarget: AudioApp? {
+        if let shortcutTarget { return shortcutTarget }
+        return apps
+            .filter { $0.isPlaying && !$0.isMuted }
+            .max { $0.level < $1.level }
+    }
+
+    func toggleMuteFromHotKey() {
+        guard let app = hotKeyTarget else { return }
+        toggleMute(app)
+    }
+
+    func toggleSoloFromHotKey() {
+        guard let app = hotKeyTarget, apps.count > 1 else { return }
+        toggleSolo(app)
     }
 
     // MARK: - Focus

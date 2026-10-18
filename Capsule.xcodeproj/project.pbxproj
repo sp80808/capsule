@@ -22,6 +22,7 @@
 		A1000013000000000000001 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000015000000000000001 /* StatusBarController.swift */; };
 		A1000014000000000000001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016000000000000001 /* Theme.swift */; };
 		A1000015000000000000001 /* VolumeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017000000000000001 /* VolumeStore.swift */; };
+		A1000016000000000000001 /* GlobalHotKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000018000000000000001 /* GlobalHotKeys.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 		A2000015000000000000001 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		A2000016000000000000001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A2000017000000000000001 /* VolumeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeStore.swift; sourceTree = "<group>"; };
+		A2000018000000000000001 /* GlobalHotKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeys.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +83,7 @@
 				A2000015000000000000001 /* StatusBarController.swift */,
 				A2000016000000000000001 /* Theme.swift */,
 				A2000017000000000000001 /* VolumeStore.swift */,
+				A2000018000000000000001 /* GlobalHotKeys.swift */,
 				A2000005000000000000001 /* Assets.xcassets */,
 				A2000006000000000000001 /* Info.plist */,
 				A2000007000000000000001 /* Capsule.entitlements */,
@@ -179,6 +182,7 @@
 				A1000013000000000000001 /* StatusBarController.swift in Sources */,
 				A1000014000000000000001 /* Theme.swift in Sources */,
 				A1000015000000000000001 /* VolumeStore.swift in Sources */,
+				A1000016000000000000001 /* GlobalHotKeys.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

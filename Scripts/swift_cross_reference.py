@@ -65,6 +65,9 @@ INHERITED = {
     "some",
     "ID",
     "Element",
+    # Synthesised by protocol conformance, not written in the source:
+    # CaseIterable.allCases, RawRepresentable.rawValue, Equatable.== …
+    "allCases",
 }
 
 # Members provided by Array/Set/Dictionary — variables declared as a collection

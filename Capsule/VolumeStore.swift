@@ -25,6 +25,7 @@ struct VolumeStore {
         static let hidden = "capsule.hiddenApps.v1"
         static let demoMode = "capsule.demoMode"
         static let lastDevice = "capsule.lastOutputDevice"
+        static let globalShortcuts = "capsule.globalShortcuts"
     }
 
     // MARK: - Per-app levels
@@ -87,5 +88,12 @@ struct VolumeStore {
     var lastOutputDeviceName: String? {
         get { defaults.string(forKey: Key.lastDevice) }
         nonmutating set { defaults.set(newValue, forKey: Key.lastDevice) }
+    }
+
+    /// System-wide hot keys are opt-in: they grab chords in every app, so the
+    /// user has to ask for them.
+    var globalShortcutsEnabled: Bool {
+        get { defaults.bool(forKey: Key.globalShortcuts) }
+        nonmutating set { defaults.set(newValue, forKey: Key.globalShortcuts) }
     }
 }
