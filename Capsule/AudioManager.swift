@@ -62,6 +62,17 @@ final class AudioManager: ObservableObject {
     /// When a timed mute expires, keyed by app id.
     @Published private(set) var muteExpiries: [AudioApp.ID: Date] = [:]
 
+    /// Saved mixes, sorted by name.
+    @Published private(set) var snapshots: [MixSnapshot] = []
+
+    /// Restore each output device's last master volume when switching to it.
+    @Published var rememberDeviceVolumes: Bool {
+        didSet {
+            guard rememberDeviceVolumes != oldValue else { return }
+            store.rememberDeviceVolumes = rememberDeviceVolumes
+        }
+    }
+
     /// Ticks once a second while a countdown is running, so rows can repaint
     /// their remaining time.
     @Published private(set) var countdownTick: Int = 0
@@ -103,13 +114,17 @@ final class AudioManager: ObservableObject {
     private var demoTick: Int = 0
     /// Apps silenced by the current solo, so "Restore" can undo it exactly.
     private var silencedBySolo: Set<AudioApp.ID> = []
+    private var deviceMemory = DeviceVolumeMemory()
     private var didInitialize = false
 
     init(store: VolumeStore = .shared) {
         self.store = store
         self.demoMode = store.demoMode
         self.globalShortcutsEnabled = store.globalShortcutsEnabled
+        self.rememberDeviceVolumes = store.rememberDeviceVolumes
         self.hiddenAppIDs = store.hiddenAppIDs()
+        self.snapshots = store.snapshots()
+        self.deviceMemory = store.deviceVolumeMemory()
     }
 
     // MARK: - Lifecycle
@@ -381,19 +396,25 @@ final class AudioManager: ObservableObject {
     }
 
     private func tickExpiries() {
+        expireDueMutes()
+        if muteExpiries.isEmpty {
+            stopExpiryTimer()
+        } else {
+            countdownTick &+= 1
+        }
+    }
+
+    /// Unmutes every app whose timed mute has run out. Exposed (and `now`
+    /// injectable) so it can be tested without waiting on a run loop timer.
+    func expireDueMutes(now: Date = Date()) {
         // Snapshot first: mutating the dictionary while iterating it would trap
         // on exclusivity.
-        let due = muteExpiries.filter { $0.value <= Date() }.map { $0.key }
+        let due = muteExpiries.filter { $0.value <= now }.map { $0.key }
         for id in due {
             muteExpiries.removeValue(forKey: id)
             if let app = apps.first(where: { $0.id == id }) {
                 setMuted(false, for: app)
             }
-        }
-        if muteExpiries.isEmpty {
-            stopExpiryTimer()
-        } else {
-            countdownTick &+= 1
         }
     }
 
@@ -551,6 +572,45 @@ final class AudioManager: ObservableObject {
         return running.activate(options: [.activateIgnoringOtherApps])
     }
 
+    // MARK: - Snapshots
+
+    /// Saves the current mix. Saving again under the same name replaces it.
+    @discardableResult
+    func captureSnapshot(named name: String) -> MixSnapshot {
+        var levels: [String: VolumeStore.Level] = [:]
+        for app in apps {
+            levels[app.id] = VolumeStore.Level(volume: app.volume, isMuted: app.isMuted)
+        }
+
+        let snapshot = MixSnapshot(name: name, levels: levels)
+        snapshots.removeAll { $0.name == snapshot.name }
+        snapshots.append(snapshot)
+        snapshots.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        store.saveSnapshots(snapshots)
+        return snapshot
+    }
+
+    /// Restores a saved mix. Apps that did not exist when it was saved are left
+    /// alone; the solo and any timed mutes are cleared first.
+    func applySnapshot(_ snapshot: MixSnapshot) {
+        clearSolo()
+        muteExpiries.removeAll()
+        stopExpiryTimer()
+
+        for app in apps {
+            guard let level = snapshot.levels[app.id] else { continue }
+            app.volume = AudioApp.clamp(level.volume)
+            app.isMuted = level.isMuted
+        }
+
+        updateStatusGlyph()
+    }
+
+    func deleteSnapshot(_ snapshot: MixSnapshot) {
+        snapshots.removeAll { $0.id == snapshot.id }
+        store.saveSnapshots(snapshots)
+    }
+
     // MARK: - Output device
 
     func refreshDevices() {
@@ -570,8 +630,23 @@ final class AudioManager: ObservableObject {
     }
 
     func selectDevice(_ device: AudioDevice) {
+        rememberCurrentDeviceVolume()
+
         guard AudioDeviceService.setDefaultOutputDevice(device.id) else { return }
         refreshDevices()
+
+        if rememberDeviceVolumes, let remembered = deviceMemory.volume(for: device.name) {
+            setMasterVolume(remembered)
+        }
+    }
+
+    private func rememberCurrentDeviceVolume() {
+        guard let current = devices.first(where: { $0.id == defaultDeviceID }),
+              let masterVolume
+        else { return }
+
+        deviceMemory.remember(masterVolume, for: current.name)
+        store.saveDeviceVolumeMemory(deviceMemory)
     }
 
     func setMasterVolume(_ value: Double) {

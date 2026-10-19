@@ -26,6 +26,9 @@ struct VolumeStore {
         static let demoMode = "capsule.demoMode"
         static let lastDevice = "capsule.lastOutputDevice"
         static let globalShortcuts = "capsule.globalShortcuts"
+        static let snapshots = "capsule.snapshots.v1"
+        static let deviceVolumes = "capsule.deviceVolumes.v1"
+        static let rememberDeviceVolumes = "capsule.rememberDeviceVolumes"
     }
 
     // MARK: - Per-app levels
@@ -88,6 +91,35 @@ struct VolumeStore {
     var lastOutputDeviceName: String? {
         get { defaults.string(forKey: Key.lastDevice) }
         nonmutating set { defaults.set(newValue, forKey: Key.lastDevice) }
+    }
+
+    // MARK: - Snapshots & device memory
+
+    func snapshots() -> [MixSnapshot] {
+        guard let data = defaults.data(forKey: Key.snapshots) else { return [] }
+        let stored = (try? JSONDecoder().decode([MixSnapshot].self, from: data)) ?? []
+        return stored.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    func saveSnapshots(_ snapshots: [MixSnapshot]) {
+        guard let data = try? JSONEncoder().encode(snapshots) else { return }
+        defaults.set(data, forKey: Key.snapshots)
+    }
+
+    func deviceVolumeMemory() -> DeviceVolumeMemory {
+        guard let data = defaults.data(forKey: Key.deviceVolumes) else { return DeviceVolumeMemory() }
+        return (try? JSONDecoder().decode(DeviceVolumeMemory.self, from: data)) ?? DeviceVolumeMemory()
+    }
+
+    func saveDeviceVolumeMemory(_ memory: DeviceVolumeMemory) {
+        guard let data = try? JSONEncoder().encode(memory) else { return }
+        defaults.set(data, forKey: Key.deviceVolumes)
+    }
+
+    /// Restore each output device's last master volume when you switch to it.
+    var rememberDeviceVolumes: Bool {
+        get { defaults.object(forKey: Key.rememberDeviceVolumes) as? Bool ?? true }
+        nonmutating set { defaults.set(newValue, forKey: Key.rememberDeviceVolumes) }
     }
 
     /// System-wide hot keys are opt-in: they grab chords in every app, so the

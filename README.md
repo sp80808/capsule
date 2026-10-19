@@ -21,7 +21,8 @@ control and a Control Center-inspired design.
 - 🎚️ **Output device switching** and **master volume + mute**, straight from
   Core Audio
 - 🎨 **Native macOS design**: pill sliders, frosted glass, adaptive colours
-- 💾 **Remembers your mix** across relaunches
+- 💾 **Remembers your mix** across relaunches, per output device
+- 🗂️ **Saved mixes**: snapshot the whole mixer under a name and recall it later
 - ♿ **VoiceOver friendly**: labelled sliders with adjustable actions
 
 > **Demo Mode.** Per-app *capture* needs an audio driver (see
@@ -94,6 +95,7 @@ xcodebuild -project Capsule.xcodeproj -target Capsule -configuration Debug build
 | `AudioApp.swift` | Per-app model with stable identity + icon fallbacks |
 | `AudioDeviceService.swift` | Core Audio device enumeration, master volume/mute |
 | `VolumeStore.swift` | `UserDefaults` persistence |
+| `MixSnapshot.swift` | Saved mixes and per-device master volume memory |
 | `MixerView.swift` | The mixer (popover and window share it) |
 | `AppRowView.swift` | App card, level meter and the right-click context menu |
 | `PillSlider.swift` | Custom slider with accessibility support |
@@ -118,8 +120,15 @@ python3 -m venv .venv && .venv/bin/pip install tree-sitter tree-sitter-swift
 .venv/bin/python Scripts/check_xcodeproj.py        # new files are registered
 ```
 
-They are not a substitute for `xcodebuild` — see [AUDIT.md](AUDIT.md) for what
-they do and do not prove.
+On a Mac, the real check is:
+
+```bash
+xcodebuild -project Capsule.xcodeproj -scheme Capsule test
+```
+
+`CapsuleTests` covers the mute/solo/timed-mute/snapshot logic. The three scripts
+are not a substitute for that — see [AUDIT.md](AUDIT.md) for what they do and do
+not prove.
 
 ## Roadmap
 

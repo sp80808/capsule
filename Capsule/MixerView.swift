@@ -16,6 +16,8 @@ struct MixerView: View {
     var compact: Bool = true
 
     @State private var query: String = ""
+    @State private var isSavingSnapshot = false
+    @State private var snapshotName: String = ""
 
     private var filteredApps: [AudioApp] {
         let visible = manager.visibleApps
@@ -54,6 +56,20 @@ struct MixerView: View {
             VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                 .ignoresSafeArea()
         )
+        .alert("Save current mix", isPresented: $isSavingSnapshot) {
+            TextField("Name", text: $snapshotName)
+
+            Button("Save") {
+                manager.captureSnapshot(named: snapshotName)
+                snapshotName = ""
+            }
+
+            Button("Cancel", role: .cancel) {
+                snapshotName = ""
+            }
+        } message: {
+            Text("Saving again with the same name replaces it.")
+        }
     }
 
     // MARK: - Header
@@ -80,6 +96,8 @@ struct MixerView: View {
 
             Spacer()
 
+            snapshotMenu
+
             headerButton("arrow.clockwise", help: "Refresh app list") {
                 manager.refreshApps()
                 manager.refreshDevices()
@@ -97,6 +115,49 @@ struct MixerView: View {
         }
         .padding(.horizontal, CapsuleTheme.gutter)
         .padding(.vertical, 12)
+    }
+
+    private var snapshotMenu: some View {
+        Menu {
+            Button("Save Current Mix…") {
+                snapshotName = MixSnapshot.fallbackName()
+                isSavingSnapshot = true
+            }
+
+            if !manager.snapshots.isEmpty {
+                Divider()
+
+                ForEach(manager.snapshots) { snapshot in
+                    Button {
+                        manager.applySnapshot(snapshot)
+                    } label: {
+                        Text(snapshot.name)
+                    }
+                }
+
+                Divider()
+
+                Menu("Delete Mix") {
+                    ForEach(manager.snapshots) { snapshot in
+                        Button(role: .destructive) {
+                            manager.deleteSnapshot(snapshot)
+                        } label: {
+                            Text(snapshot.name)
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "square.stack.3d.up.fill")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.secondary)
+                .frame(width: 26, height: 26)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(manager.snapshots.isEmpty ? "Saved mixes" : "\(manager.snapshots.count) saved mixes")
     }
 
     private func headerButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {

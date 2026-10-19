@@ -25,11 +25,11 @@ jobs:
       - name: Member cross-reference
         run: python3 Scripts/swift_cross_reference.py
 
-      - name: Xcode project consistency
+      - name: Xcode project, targets and schemes
         run: python3 Scripts/check_xcodeproj.py
 
-  build:
-    name: Build (macOS)
+  build-and-test:
+    name: Build and test (macOS)
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -39,13 +39,24 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Build Capsule
+      - name: Build
         run: >
           xcodebuild
           -project Capsule.xcodeproj
-          -target Capsule
+          -scheme Capsule
           -configuration Debug
           build
+          CODE_SIGN_IDENTITY=""
+          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Test
+        run: >
+          xcodebuild
+          -project Capsule.xcodeproj
+          -scheme Capsule
+          -configuration Debug
+          test
           CODE_SIGN_IDENTITY=""
           CODE_SIGNING_REQUIRED=NO
           CODE_SIGNING_ALLOWED=NO

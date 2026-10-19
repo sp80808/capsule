@@ -15,6 +15,7 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 - **Timed mutes**: mute an app for 5/15/30/60 minutes with a live countdown
 - **Core Audio**: output device enumeration and switching, master volume/mute
 - **Persistence**: per-app volume and mute survive relaunch
+- **Saved mixes** and per-output-device master volume memory
 - **Beautiful UI**: frosted glass, pill sliders, level meters, adaptive colours
 - **Accessibility**: labelled sliders with adjustable actions
 
@@ -22,10 +23,11 @@ Capsule is a native macOS audio mixer application built with SwiftUI, featuring 
 > audio driver. See [AUDIT.md](AUDIT.md).
 
 ### 📊 Project Stats
-- **Swift Code**: ~2,790 lines across 15 files
+- **Swift Code**: ~3,560 lines across 18 files (16 app + 2 test)
 - **UI Components**: mixer, app row, context menu, pill slider, level meter,
   settings
-- **Checks**: 3 scripts (syntax, member cross-reference, project consistency) + CI
+- **Checks**: 3 scripts (syntax, member cross-reference, project/target/scheme
+  consistency), a hosted unit-test target and CI
 
 ## File Structure
 
@@ -40,6 +42,7 @@ capsule/
 │   ├── AudioApp.swift              # Per-app model with stable identity
 │   ├── AudioDeviceService.swift    # Core Audio devices + master volume
 │   ├── VolumeStore.swift           # UserDefaults persistence
+│   ├── MixSnapshot.swift           # Saved mixes + per-device volume memory
 │   ├── MixerView.swift             # The mixer (popover + window)
 │   ├── AppRowView.swift            # App card, level meter, context menu
 │   ├── PillSlider.swift            # Accessible pill slider
@@ -51,6 +54,7 @@ capsule/
 │   ├── Assets.xcassets/            # Icons and colors
 │   ├── Info.plist                  # App configuration
 │   └── Capsule.entitlements        # Permissions
+├── CapsuleTests/                   # Unit tests (AudioManager, VolumeStore)
 ├── Scripts/                        # Runnable checks (see AUDIT.md)
 ├── .github/workflows/ci.yml        # Linux checks + macOS build
 ├── README.md                       # Project overview

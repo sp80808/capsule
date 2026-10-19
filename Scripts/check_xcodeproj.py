@@ -18,12 +18,14 @@ import plistlib
 import re
 import sys
 from pathlib import Path
+from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parent.parent
 PROJECT = ROOT / "Capsule.xcodeproj" / "project.pbxproj"
 SOURCES_DIR = ROOT / "Capsule"
 
 SOURCE_SUFFIXES = {".swift"}
+SKIP_DIRS = {".git", ".build", "DerivedData", "build", ".venv"}
 
 
 def load_project() -> dict:
@@ -102,60 +104,159 @@ def parse_oldstyle(text: str) -> dict:
     return parse_value()
 
 
+def check_schemes(objects: dict) -> list[str]:
+    """Every blueprint a shared scheme points at must exist in the project."""
+    problems: list[str] = []
+    schemes = sorted(PROJECT.parent.glob("xcshareddata/xcschemes/*.xcscheme"))
+    for scheme in schemes:
+        try:
+            root = ElementTree.fromstring(scheme.read_text())
+        except ElementTree.ParseError as error:
+            problems.append(f"{scheme.name} is not valid XML: {error}")
+            continue
+
+        found = 0
+        for reference in root.iter("BuildableReference"):
+            blueprint = reference.get("BlueprintIdentifier", "")
+            found += 1
+            if blueprint not in objects:
+                problems.append(
+                    f"{scheme.name} references unknown blueprint {blueprint} "
+                    f"({reference.get('BuildableName')})"
+                )
+        if found == 0:
+            problems.append(f"{scheme.name} does not reference any target")
+    return problems
+
+
 def main() -> int:
     project = load_project()
     objects = project["objects"]
 
-    referenced: dict[str, str] = {}
-    for object_id, obj in objects.items():
-        if obj.get("isa") == "PBXFileReference":
-            referenced[obj["path"]] = object_id
+    failures: list[str] = []
+    failures.extend(check_schemes(objects))
 
-    compiled_paths: set[str] = set()
+    # ---- every Swift file on disk is compiled, and vice versa -------------
+    on_disk = {
+        path.name
+        for path in ROOT.rglob("*.swift")
+        if path.is_file() and not SKIP_DIRS.intersection(path.parts)
+    }
+
+    compiled: set[str] = set()
+    for build_file_id, obj in objects.items():
+        if obj.get("isa") != "PBXBuildFile":
+            continue
+        file_ref = objects.get(obj["fileRef"])
+        if file_ref is None:
+            failures.append(f"PBXBuildFile {build_file_id} has a dangling fileRef")
+            continue
+        # Only source-phase build files matter for the disk comparison.
+        compiled.add(file_ref["path"])
+
+    source_phase_files: set[str] = set()
     for obj in objects.values():
         if obj.get("isa") != "PBXSourcesBuildPhase":
             continue
         for build_file_id in obj.get("files", []):
-            build_file = objects.get(build_file_id)
-            if not build_file:
-                print(f"FAIL sources phase references unknown build file {build_file_id}")
-                return 1
-            file_ref = objects.get(build_file["fileRef"])
-            if not file_ref:
-                print(f"FAIL build file {build_file_id} references unknown file ref")
-                return 1
-            compiled_paths.add(file_ref["path"])
+            file_ref = objects.get(objects.get(build_file_id, {}).get("fileRef", ""))
+            if file_ref is None:
+                failures.append(f"sources phase references unknown build file {build_file_id}")
+                continue
+            source_phase_files.add(file_ref["path"])
 
-    on_disk = {
-        path.name
-        for path in SOURCES_DIR.rglob("*")
-        if path.is_file() and path.suffix in SOURCE_SUFFIXES
+    swift_on_disk = {
+        name
+        for name in on_disk
+        if name.endswith(".swift")
     }
+    for name in sorted(swift_on_disk - source_phase_files):
+        failures.append(f"{name} is on disk but not in any Sources build phase")
+    for name in sorted(source_phase_files - on_disk):
+        failures.append(f"{name} is in a Sources build phase but missing from disk")
 
-    failures: list[str] = []
-    for name in sorted(on_disk - compiled_paths):
-        failures.append(f"{name} is on disk but not in the Sources build phase")
-    for name in sorted(compiled_paths - on_disk):
-        failures.append(f"{name} is in the Sources build phase but missing from disk")
+    # ---- structural integrity -------------------------------------------
+    referenced_config_lists: set[str] = set()
 
-    for build_file_id, obj in objects.items():
-        if obj.get("isa") != "PBXBuildFile":
-            continue
-        if obj["fileRef"] not in objects:
-            failures.append(f"PBXBuildFile {build_file_id} has a dangling fileRef")
+    for object_id, obj in objects.items():
+        isa = obj.get("isa")
 
-    ids = list(objects)
-    if len(ids) != len(set(ids)):
+        if isa == "PBXNativeTarget":
+            config_list = obj.get("buildConfigurationList")
+            if config_list not in objects:
+                failures.append(f"target {obj.get('name')} has no build configuration list")
+            else:
+                referenced_config_lists.add(config_list)
+
+            for phase_id in obj.get("buildPhases", []):
+                if phase_id not in objects:
+                    failures.append(f"target {obj.get('name')} references missing build phase {phase_id}")
+
+            product = obj.get("productReference")
+            if product and product not in objects:
+                failures.append(f"target {obj.get('name')} references missing product {product}")
+
+            for dependency_id in obj.get("dependencies", []):
+                dependency = objects.get(dependency_id)
+                if dependency is None:
+                    failures.append(f"target {obj.get('name')} has a dangling dependency")
+                    continue
+                if dependency.get("target") not in objects:
+                    failures.append(f"dependency {dependency_id} points at a missing target")
+                if dependency.get("targetProxy") not in objects:
+                    failures.append(f"dependency {dependency_id} points at a missing target proxy")
+
+        elif isa == "PBXContainerItemProxy":
+            if obj.get("containerPortal") not in objects:
+                failures.append(f"proxy {object_id} points at a missing container portal")
+            if obj.get("remoteGlobalIDString") not in objects:
+                failures.append(f"proxy {object_id} points at a missing remote target")
+
+        elif isa == "XCConfigurationList":
+            configs = obj.get("buildConfigurations", [])
+            if not configs:
+                failures.append(f"configuration list {object_id} has no configurations")
+            for config_id in configs:
+                if config_id not in objects:
+                    failures.append(f"configuration list {object_id} references missing config {config_id}")
+
+    project_object = objects.get(project.get("rootObject", ""), {})
+    referenced_config_lists.add(project_object.get("buildConfigurationList", ""))
+    for object_id, obj in objects.items():
+        if obj.get("isa") == "XCConfigurationList" and object_id not in referenced_config_lists:
+            failures.append(f"configuration list {object_id} is not used by any target or the project")
+
+    targets = [o for o in objects.values() if o.get("isa") == "PBXNativeTarget"]
+    test_targets = [t for t in targets if t.get("productType") == "com.apple.product-type.bundle.unit-test"]
+    for test_target in test_targets:
+        names = {t.get("name") for t in targets}
+        settings = _release_settings(objects, test_target)
+        if "TEST_HOST" not in settings or "BUNDLE_LOADER" not in settings:
+            failures.append(f"test target {test_target.get('name')} is not hosted by the app")
+
+    if len(objects) != len(set(objects)):
         failures.append("duplicate object ids in project.pbxproj")
 
+    for failure in failures:
+        print(f"FAIL {failure}")
+
     if failures:
-        for failure in failures:
-            print(f"FAIL {failure}")
         return 1
 
-    print(f"ok   {len(on_disk)} Swift files registered in Capsule.xcodeproj")
-    print(f"ok   {len(referenced)} file references resolve")
+    print(f"ok   {len(swift_on_disk)} Swift files on disk, all registered")
+    print(f"ok   {len(targets)} target(s): {', '.join(sorted(t['name'] for t in targets))}")
+    print(f"ok   {len(test_targets)} test target(s) hosted by the app")
+    print(f"ok   {len(list(PROJECT.parent.glob('xcshareddata/xcschemes/*.xcscheme')))} shared scheme(s) resolve")
     return 0
+
+
+def _release_settings(objects: dict, target: dict) -> dict:
+    config_list = objects.get(target.get("buildConfigurationList"), {})
+    for config_id in config_list.get("buildConfigurations", []):
+        settings = objects.get(config_id, {}).get("buildSettings", {})
+        if settings:
+            return settings
+    return {}
 
 
 if __name__ == "__main__":

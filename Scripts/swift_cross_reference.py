@@ -94,14 +94,19 @@ class Module:
     def __init__(self) -> None:
         self.members: dict[str, set[str]] = {}
         self.var_types: dict[str, str] = {}
+        self.file_var_types: dict[Path, dict[str, str]] = {}
         self.file_types: dict[str, set[str]] = {}
 
     def add_member(self, type_name: str, member: str) -> None:
         self.members.setdefault(type_name, set()).add(member)
 
-    def resolve(self, receiver: str) -> str | None:
+    def resolve(self, receiver: str, file: Path | None = None) -> str | None:
         if receiver in self.members:
             return receiver
+        # A local declaration wins: the same variable name in two files can
+        # legitimately have two different types.
+        if file is not None and receiver in self.file_var_types.get(file, {}):
+            return self.file_var_types[file][receiver]
         return self.var_types.get(receiver)
 
 
@@ -197,6 +202,8 @@ def build(parser: Parser, files: list[Path]) -> tuple[Module, dict[Path, str]]:
         sources[file] = strip_noise(raw)
         tree = parser.parse(raw)
         local_types: set[str] = set()
+        local_vars: dict[str, str] = {}
+        module.file_var_types[file] = local_vars
 
         def visit(node, enclosing: str | None) -> None:
             if node.type in DECL_TYPES:
@@ -221,11 +228,14 @@ def build(parser: Parser, files: list[Path]) -> tuple[Module, dict[Path, str]]:
                 var_type = declared_type(node, raw) or inferred_type(node, raw)
                 if name and name != "shared" and var_type in module.members:
                     module.var_types.setdefault(name, var_type)
+                    local_vars[name] = var_type
             elif node.type == "parameter":
                 identifiers = [c for c in node.children if c.type == "simple_identifier"]
                 var_type = declared_type(node, raw)
                 if identifiers and var_type:
-                    module.var_types.setdefault(text(identifiers[-1], raw), var_type)
+                    parameter = text(identifiers[-1], raw)
+                    module.var_types.setdefault(parameter, var_type)
+                    local_vars[parameter] = var_type
 
             for child in node.children:
                 visit(child, enclosing)
@@ -239,7 +249,8 @@ def build(parser: Parser, files: list[Path]) -> tuple[Module, dict[Path, str]]:
 def main() -> int:
     files = [
         path
-        for path in sorted((ROOT / "Capsule").rglob("*.swift"))
+        for source_root in ("Capsule", "CapsuleTests")
+        for path in sorted((ROOT / source_root).rglob("*.swift"))
         if not SKIP_DIRS.intersection(path.parts)
     ]
     parser = Parser(Language(tree_sitter_swift.language()))
@@ -273,7 +284,7 @@ def main() -> int:
                     problems.append(f"{file}:{line} self.{member} is not declared in this file's types")
                 continue
 
-            type_name = module.resolve(receiver)
+            type_name = module.resolve(receiver, file)
             if type_name is None:
                 continue
             if member in module.members.get(type_name, set()) or member in INHERITED:

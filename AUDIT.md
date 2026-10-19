@@ -3,7 +3,8 @@
 Audit performed 2026-10-18 against `4ce661e` on branch `arena/e0c40db0-capsule`.
 
 Everything in **Fixed** below is already applied in this branch (last updated
-2026-10-19: global hotkeys, timed mutes, reduce-motion support). Everything in
+2026-10-20: saved mixes, per-device volume memory, a unit test target and a
+shared scheme; before that, global hotkeys, timed mutes, reduce motion). Everything in
 **Open** and **Roadmap** is a proposal.
 
 ---
@@ -18,7 +19,7 @@ are wired into CI:
 | --- | --- | --- |
 | `Scripts/swift_syntax_check.py` | Every `.swift` file parses (tree-sitter Swift grammar); catches unbalanced braces, malformed declarations, stray tokens | `python3 Scripts/swift_syntax_check.py` |
 | `Scripts/swift_cross_reference.py` | Every member access on a Capsule type resolves to a member that type actually declares; catches renamed methods, missing properties, typos at call sites | `python3 Scripts/swift_cross_reference.py` |
-| `Scripts/check_xcodeproj.py` | Every Swift file on disk is registered in the Sources build phase and every file reference resolves | `python3 Scripts/check_xcodeproj.py` |
+| `Scripts/check_xcodeproj.py` | Every Swift file on disk is registered in a Sources build phase; every target, dependency, proxy, configuration list and shared-scheme blueprint reference resolves | `python3 Scripts/check_xcodeproj.py` |
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install tree-sitter tree-sitter-swift
@@ -102,6 +103,35 @@ and schedules its return. The row counts down ("Muted · 4:59 left") and the app
 unmutes itself; muting or unmuting by hand, or Mute All / Unmute All, cancels
 the timer. Only one 1-second timer runs, and only while a countdown is active.
 
+### Saved mixes and per-device volume memory
+
+`MixSnapshot.swift` holds two dependency-free value types (so they unit test
+directly):
+
+- **`MixSnapshot`** — a named mix. The stack icon in the mixer header saves the
+  current mix (an alert asks for a name; saving under the same name replaces it)
+  and recalls or deletes any saved one. Recalling clears solo and timed mutes
+  first, and leaves apps that did not exist when the snapshot was taken alone.
+- **`DeviceVolumeMemory`** — remembers each output device's last master volume
+  and restores it on switch, so plugging in headphones is not a jump-scare.
+  Toggle in Settings → Output device.
+
+### Tests
+
+`CapsuleTests` is a hosted unit-test target (`TEST_HOST` = the app): 40 test
+cases, 90 assertions, over the logic that has no AppKit or Core Audio in it: mute
+bookkeeping, solo/restore semantics (including "restore must not unmute an app
+that was already muted"), timed-mute expiry, snapshots, focus fallbacks,
+hot-key target selection, persistence round-trips and the two value types.
+
+```bash
+xcodebuild -project Capsule.xcodeproj -scheme Capsule test
+```
+
+A shared scheme (`Capsule.xcodeproj/xcshareddata/xcschemes/Capsule.xcscheme`) is
+checked in so that command works from a clean clone, and CI runs it. Timed-mute
+expiry is injectable (`expireDueMutes(now:)`) so the tests never wait on a timer.
+
 ### Working shortcuts
 
 Context-menu items on macOS only *display* a shortcut, so the same actions are
@@ -170,9 +200,11 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
    it needs a privileged helper, or the process-tap route above.
 3. **`NSMicrophoneUsageDescription` is unused** until capture lands; kept so the
    first capture build does not crash on the prompt.
-4. **No unit tests.** There is no test target in the project. The mute/solo/
-   persistence logic is now isolated in `AudioManager` + `VolumeStore` (no view
-   types), so a target is mechanical to add — see Roadmap E1.
+4. **The tests have never been run here.** The `CapsuleTests` target exists, is
+   registered, is referenced by the shared scheme and is wired into CI, but
+   there is no macOS toolchain on the machine this was written on, so
+   `xcodebuild test` has not executed. Treat the first run on a Mac as the real
+   check.
 5. **All copy is hardcoded English.** No `String(localized:)`, no `.xcstrings`.
 6. **Refresh churn.** Every `NSWorkspace` launch/terminate notification triggers
    a full re-enumeration. Cheap today, worth debouncing if it ever shows.
@@ -196,8 +228,8 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
   solo/mute primitives added here.
 - **A5. Level-driven auto-behaviour.** Auto-show an app the moment it makes
   sound; auto-hide after N minutes of silence; "meeting mode" presets.
-- **A6. Per-device master memory.** Remember and restore master volume per
-  output device on switch.
+- **A6. ~~Per-device master memory.~~ Done** (`DeviceVolumeMemory`, toggle in
+  Settings). Remaining: also remember per-device *per-app* mixes.
 - **A7. Boost above 100%** per app (needs A1/A2), with a visible headroom meter.
 
 ### B. Mixer UX
@@ -217,8 +249,8 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
   show in a compact top section.
 - **B5. App groups.** "Browsers", "Calls", "Games" with a group fader that
   scales its members proportionally.
-- **B6. Snapshots/profiles.** Name and recall mixes ("Meeting", "Focus",
-  "Late night"); import/export as JSON.
+- **B6. Snapshots/profiles — partly done.** Save/recall/delete named mixes works.
+  Remaining: import/export as JSON, and per-device profiles.
 - **B7. Mini mode.** A one-row popover: focused app + master, for people who
   only ever touch two sliders.
 - **B8. Peak-hold master meter** and a per-row sparkline of recent levels
@@ -255,9 +287,9 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
 
 ### E. Engineering
 
-- **E1. Unit test target** for `AudioManager` (solo/restore semantics, mute
-  bookkeeping, focus fallback) and `VolumeStore` (round-trip, migration). The
-  logic is already view-free.
+- **E1. ~~Unit test target.~~ Done** — `CapsuleTests` covers `AudioManager`,
+  `VolumeStore`, `MixSnapshot` and `DeviceVolumeMemory`. Remaining: snapshot
+  tests for the views, and coverage of `AudioDeviceService` behind a protocol.
 - **E2. `LevelSource` protocol** so demo data, process taps and the HAL driver
   are interchangeable behind one interface.
 - **E3. SwiftLint/SwiftFormat** in CI.

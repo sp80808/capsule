@@ -23,7 +23,20 @@
 		A1000014000000000000001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016000000000000001 /* Theme.swift */; };
 		A1000015000000000000001 /* VolumeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017000000000000001 /* VolumeStore.swift */; };
 		A1000016000000000000001 /* GlobalHotKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000018000000000000001 /* GlobalHotKeys.swift */; };
+		A9000014000000000000001 /* AudioManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9000012000000000000001 /* AudioManagerTests.swift */; };
+		A9000015000000000000001 /* VolumeStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9000013000000000000001 /* VolumeStoreTests.swift */; };
+		A1000017000000000000001 /* MixSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000019000000000000001 /* MixSnapshot.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A9000006000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A7000001000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A5000001000000000000001;
+			remoteInfo = Capsule;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A0000001000000000000001 /* Capsule.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Capsule.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -45,6 +58,10 @@
 		A2000016000000000000001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A2000017000000000000001 /* VolumeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeStore.swift; sourceTree = "<group>"; };
 		A2000018000000000000001 /* GlobalHotKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeys.swift; sourceTree = "<group>"; };
+		A9000011000000000000001 /* CapsuleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CapsuleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A9000012000000000000001 /* AudioManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManagerTests.swift; sourceTree = "<group>"; };
+		A9000013000000000000001 /* VolumeStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeStoreTests.swift; sourceTree = "<group>"; };
+		A2000019000000000000001 /* MixSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixSnapshot.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,11 +74,22 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
+/* Begin PBXFrameworksBuildPhase section (CapsuleTests) */
+		A9000003000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section (CapsuleTests) */
+
 /* Begin PBXGroup section */
 		A4000001000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				A4000002000000000000001 /* Capsule */,
+				A9000010000000000000001 /* CapsuleTests */,
 				A4000003000000000000001 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -84,6 +112,7 @@
 				A2000016000000000000001 /* Theme.swift */,
 				A2000017000000000000001 /* VolumeStore.swift */,
 				A2000018000000000000001 /* GlobalHotKeys.swift */,
+				A2000019000000000000001 /* MixSnapshot.swift */,
 				A2000005000000000000001 /* Assets.xcassets */,
 				A2000006000000000000001 /* Info.plist */,
 				A2000007000000000000001 /* Capsule.entitlements */,
@@ -95,8 +124,18 @@
 			isa = PBXGroup;
 			children = (
 				A0000001000000000000001 /* Capsule.app */,
+				A9000011000000000000001 /* CapsuleTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A9000010000000000000001 /* CapsuleTests */ = {
+			isa = PBXGroup;
+			children = (
+				A9000012000000000000001 /* AudioManagerTests.swift */,
+				A9000013000000000000001 /* VolumeStoreTests.swift */,
+			);
+			path = CapsuleTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -118,6 +157,24 @@
 			productName = Capsule;
 			productReference = A0000001000000000000001 /* Capsule.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A9000001000000000000001 /* CapsuleTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A9000007000000000000001 /* Build configuration list for PBXNativeTarget "CapsuleTests" */;
+			buildPhases = (
+				A9000002000000000000001 /* Sources */,
+				A9000003000000000000001 /* Frameworks */,
+				A9000004000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A9000005000000000000001 /* PBXTargetDependency */,
+			);
+			name = CapsuleTests;
+			productName = CapsuleTests;
+			productReference = A9000011000000000000001 /* CapsuleTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -148,6 +205,7 @@
 			projectRoot = "";
 			targets = (
 				A5000001000000000000001 /* Capsule */,
+				A9000001000000000000001 /* CapsuleTests */,
 			);
 		};
 /* End PBXProject section */
@@ -162,6 +220,16 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section (CapsuleTests) */
+		A9000004000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section (CapsuleTests) */
 
 /* Begin PBXSourcesBuildPhase section */
 		A5000002000000000000001 /* Sources */ = {
@@ -183,10 +251,28 @@
 				A1000014000000000000001 /* Theme.swift in Sources */,
 				A1000015000000000000001 /* VolumeStore.swift in Sources */,
 				A1000016000000000000001 /* GlobalHotKeys.swift in Sources */,
+				A1000017000000000000001 /* MixSnapshot.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9000002000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A9000014000000000000001 /* AudioManagerTests.swift in Sources */,
+				A9000015000000000000001 /* VolumeStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A9000005000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A5000001000000000000001 /* Capsule */;
+			targetProxy = A9000006000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A8000001000000000000001 /* Debug */ = {
@@ -365,6 +451,40 @@
 			};
 			name = Release;
 		};
+		A9000008000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.capsule.mixer.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Capsule.app/Contents/MacOS/Capsule";
+			};
+			name = Debug;
+		};
+		A9000009000000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.capsule.mixer.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Capsule.app/Contents/MacOS/Capsule";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -382,6 +502,15 @@
 			buildConfigurations = (
 				A8000001000000000000001 /* Debug */,
 				A8000002000000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A9000007000000000000001 /* Build configuration list for PBXNativeTarget "CapsuleTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A9000008000000000000001 /* Debug */,
+				A9000009000000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

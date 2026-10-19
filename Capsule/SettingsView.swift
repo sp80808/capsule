@@ -39,6 +39,15 @@ struct SettingsView: View {
                     .labelsHidden()
                 }
 
+                Toggle(isOn: $manager.rememberDeviceVolumes) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Remember volume per device")
+                        Text("Restores each output device's last master volume when you switch back to it.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
                 Button("Rescan devices") {
                     manager.refreshDevices()
                 }
@@ -92,6 +101,12 @@ struct SettingsView: View {
 
                 Text("Chords use ⌃⌥⌘ on purpose: ⌘M is “minimise” in most apps and ⌃⌥ is the VoiceOver prefix. They act on the app selected in the mixer, or on the loudest app that is playing when nothing is selected.")
                     .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section("Saved mixes") {
+                Text("Use the stack icon in the mixer header to save the current mix and recall it later. Saving again with the same name replaces it.")
+                    .font(.callout)
                     .foregroundColor(.secondary)
             }
 
