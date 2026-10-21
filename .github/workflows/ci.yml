@@ -31,6 +31,9 @@ jobs:
   build-and-test:
     name: Build and test (macOS)
     runs-on: macos-14
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -70,15 +73,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          LOGS=$(cat /tmp/capsule-build.log /tmp/capsule-test.log 2>/dev/null | sed -E 's|^/Users/runner/work/[^/]*/[^/]*/||')
+          MATCHED=$(printf '%s\n' "$LOGS" | grep -E "error:|Testing failed|BUILD FAILED|TEST FAILED" | sort -u | head -60 || true)
           {
-            echo "### xcodebuild output for ${GITHUB_SHA::7}"
+            echo "### xcodebuild output for ${GITHUB_SHA:0:7}"
             echo
             echo '```'
-            cat /tmp/capsule-*.log 2>/dev/null \
-              | sed -E 's|^/Users/runner/work/[^/]*/[^/]*/||' \
-              | grep -E "error:|Testing failed|BUILD FAILED|\*\* TEST FAILED" \
-              | sort -u \
-              | head -60
+            if [ -n "$MATCHED" ]; then
+              printf '%s\n' "$MATCHED"
+            else
+              echo "(no error lines matched - tail of the log follows)"
+              printf '%s\n' "$LOGS" | tail -40
+            fi
             echo '```'
           } > /tmp/capsule-errors.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/capsule-errors.md
