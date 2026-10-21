@@ -40,23 +40,45 @@ jobs:
           swift --version
 
       - name: Build
-        run: >
-          xcodebuild
-          -project Capsule.xcodeproj
-          -scheme Capsule
-          -configuration Debug
-          build
-          CODE_SIGN_IDENTITY=""
-          CODE_SIGNING_REQUIRED=NO
-          CODE_SIGNING_ALLOWED=NO
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Capsule.xcodeproj \
+            -scheme Capsule \
+            -configuration Debug \
+            build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee /tmp/capsule-build.log
 
       - name: Test
-        run: >
-          xcodebuild
-          -project Capsule.xcodeproj
-          -scheme Capsule
-          -configuration Debug
-          test
-          CODE_SIGN_IDENTITY=""
-          CODE_SIGNING_REQUIRED=NO
-          CODE_SIGNING_ALLOWED=NO
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Capsule.xcodeproj \
+            -scheme Capsule \
+            -configuration Debug \
+            test \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee /tmp/capsule-test.log
+
+      # Runner logs are awkward to reach from a terminal, so a red build also
+      # reports the compiler output where the change is being discussed.
+      - name: Report errors on the pull request
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "### xcodebuild output for ${GITHUB_SHA::7}"
+            echo
+            echo '```'
+            cat /tmp/capsule-*.log 2>/dev/null \
+              | sed -E 's|^/Users/runner/work/[^/]*/[^/]*/||' \
+              | grep -E "error:|Testing failed|BUILD FAILED|\*\* TEST FAILED" \
+              | sort -u \
+              | head -60
+            echo '```'
+          } > /tmp/capsule-errors.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/capsule-errors.md
