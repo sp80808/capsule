@@ -6,6 +6,11 @@
 //  Unlike per-app capture, all of this works through public Core Audio APIs
 //  without an audio driver.
 //
+//  Whether a device supports software volume is probed by attempting the access
+//  and checking the status, instead of asking Core Audio first: a device with no
+//  master-channel control simply fails that access and we fall back to
+//  per-channel access.
+//
 
 import AVFoundation
 import CoreAudio
@@ -100,14 +105,14 @@ enum AudioDeviceService {
     /// DACs are hardware-only).
     static func volume(of deviceID: AudioDeviceID) -> Double? {
         var master = propertyAddress(kAudioDevicePropertyVolumeScalar)
-        if hasProperty(deviceID, &master), let value = readFloat(deviceID, &master) {
+        if let value = readFloat(deviceID, &master) {
             return Double(value)
         }
 
         var channelVolumes: [Float] = []
         for channel: AudioObjectPropertyElement in 1...2 {
             var channelAddress = propertyAddress(kAudioDevicePropertyVolumeScalar, element: channel)
-            if hasProperty(deviceID, &channelAddress), let value = readFloat(deviceID, &channelAddress) {
+            if let value = readFloat(deviceID, &channelAddress) {
                 channelVolumes.append(value)
             }
         }
@@ -121,30 +126,26 @@ enum AudioDeviceService {
         let clamped = Float(min(max(value, 0), 1))
 
         var master = propertyAddress(kAudioDevicePropertyVolumeScalar)
-        if hasProperty(deviceID, &master) {
-            return writeFloat(clamped, deviceID, &master)
+        if writeFloat(clamped, deviceID, &master) {
+            return true
         }
 
         var wroteAnything = false
         for channel: AudioObjectPropertyElement in 1...2 {
             var channelAddress = propertyAddress(kAudioDevicePropertyVolumeScalar, element: channel)
-            if hasProperty(deviceID, &channelAddress) {
-                wroteAnything = writeFloat(clamped, deviceID, &channelAddress) || wroteAnything
-            }
+            wroteAnything = writeFloat(clamped, deviceID, &channelAddress) || wroteAnything
         }
         return wroteAnything
     }
 
     static func isMuted(_ deviceID: AudioDeviceID) -> Bool {
         var address = propertyAddress(kAudioDevicePropertyMute)
-        guard hasProperty(deviceID, &address) else { return false }
         return (readUInt32(deviceID, &address) ?? 0) != 0
     }
 
     @discardableResult
     static func setMuted(_ muted: Bool, on deviceID: AudioDeviceID) -> Bool {
         var address = propertyAddress(kAudioDevicePropertyMute)
-        guard hasProperty(deviceID, &address) else { return false }
         return writeUInt32(muted ? 1 : 0, deviceID, &address)
     }
 
@@ -156,12 +157,6 @@ enum AudioDeviceService {
         element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain
     ) -> AudioObjectPropertyAddress {
         AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: element)
-    }
-
-    private static func hasProperty(_ deviceID: AudioDeviceID, _ address: inout AudioObjectPropertyAddress) -> Bool {
-        var hasProperty: DarwinBoolean = false
-        let status = AudioObjectHasPropertyData(deviceID, &address, &hasProperty)
-        return status == noErr && hasProperty.boolValue
     }
 
     private static func readFloat(
@@ -220,8 +215,8 @@ enum AudioDeviceService {
 
     private static func isAlive(_ deviceID: AudioDeviceID) -> Bool {
         var address = propertyAddress(kAudioDevicePropertyDeviceIsAlive)
-        guard hasProperty(deviceID, &address) else { return true }
-        return (readUInt32(deviceID, &address) ?? 0) != 0
+        // Unreadable means "assume alive" rather than hiding a real device.
+        return (readUInt32(deviceID, &address) ?? 1) != 0
     }
 
     /// A device is an output device when its output stream configuration has at

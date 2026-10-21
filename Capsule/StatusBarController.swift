@@ -9,6 +9,7 @@
 
 import AppKit
 import Combine
+import CoreAudio
 import SwiftUI
 
 final class StatusBarController: NSObject, MixerPresenting, NSPopoverDelegate {
