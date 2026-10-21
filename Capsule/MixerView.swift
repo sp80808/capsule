@@ -6,6 +6,7 @@
 //  the detached window. Right-clicking any row reveals the app context menu.
 //
 
+import CoreAudio
 import SwiftUI
 
 struct MixerView: View {

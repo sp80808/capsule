@@ -6,6 +6,7 @@
 //  reference.
 //
 
+import CoreAudio
 import SwiftUI
 
 struct SettingsView: View {

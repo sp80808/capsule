@@ -13,6 +13,10 @@
 import AppKit
 import Carbon
 
+/// Carbon's `eventParamErr` is declared in CarbonEvents.h but is not visible to
+/// Swift, so the handler reports it by value.
+private let eventParamError: OSStatus = -9878
+
 enum HotKeyAction: String, CaseIterable, Identifiable {
 
     case muteSelected
@@ -152,7 +156,7 @@ final class GlobalHotKeyCenter {
         InstallEventHandler(
             GetEventDispatcherTarget(),
             { _, event, userData -> OSStatus in
-                guard let event, let userData else { return OSStatus(eventParamErr) }
+                guard let event, let userData else { return eventParamError }
 
                 let center = Unmanaged<GlobalHotKeyCenter>.fromOpaque(userData).takeUnretainedValue()
 
