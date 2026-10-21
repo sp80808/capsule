@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Syntax, cross-reference and project checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tree-sitter
+        run: pip install tree-sitter tree-sitter-swift
+
+      - name: Swift syntax
+        run: python3 Scripts/swift_syntax_check.py
+
+      - name: Member cross-reference
+        run: python3 Scripts/swift_cross_reference.py
+
+      - name: Xcode project, targets and schemes
+        run: python3 Scripts/check_xcodeproj.py
+
+  build-and-test:
+    name: Build and test (macOS)
+    runs-on: macos-14
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Capsule.xcodeproj \
+            -scheme Capsule \
+            -configuration Debug \
+            build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee /tmp/capsule-build.log
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Capsule.xcodeproj \
+            -scheme Capsule \
+            -configuration Debug \
+            test \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee /tmp/capsule-test.log
+
+      # Runner logs are awkward to reach from a terminal, so a red build also
+      # reports the compiler output where the change is being discussed.
+      - name: Report errors on the pull request
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LOGS=$(cat /tmp/capsule-build.log /tmp/capsule-test.log 2>/dev/null | sed -E 's|^/Users/runner/work/[^/]*/[^/]*/||')
+          MATCHED=$(printf '%s\n' "$LOGS" | grep -E "error:|Testing failed|BUILD FAILED|TEST FAILED" | sort -u | head -60 || true)
+          {
+            echo "### xcodebuild output for ${GITHUB_SHA:0:7}"
+            echo
+            echo '```'
+            if [ -n "$MATCHED" ]; then
+              printf '%s\n' "$MATCHED"
+            else
+              echo "(no error lines matched - tail of the log follows)"
+              printf '%s\n' "$LOGS" | tail -40
+            fi
+            echo '```'
+          } > /tmp/capsule-errors.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/capsule-errors.md
