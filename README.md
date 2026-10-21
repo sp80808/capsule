@@ -126,9 +126,10 @@ On a Mac, the real check is:
 xcodebuild -project Capsule.xcodeproj -scheme Capsule test
 ```
 
-`CapsuleTests` covers the mute/solo/timed-mute/snapshot logic. The three scripts
-are not a substitute for that — see [AUDIT.md](AUDIT.md) for what they do and do
-not prove.
+`CapsuleTests` covers the mute/solo/timed-mute/snapshot logic. CI runs both the
+scripts and that command (build + test on a `macos-14` runner) on every push and
+pull request; a failing build posts its compiler errors back to the PR. See
+[AUDIT.md](AUDIT.md) for what each check does and does not prove.
 
 ## Roadmap
 

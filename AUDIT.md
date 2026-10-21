@@ -11,14 +11,29 @@ shared scheme; before that, global hotkeys, timed mutes, reduce motion). Everyth
 
 ## 1. How this was verified
 
-There is no Swift toolchain or macOS SDK on the machine this was written on, so
-`xcodebuild` could not be run. Three checks that *do* run here were added and
-are wired into CI:
+Two layers, both wired into `.github/workflows/ci.yml`:
+
+**macOS (authoritative).** A `macos-14` runner builds and tests the app:
+
+```bash
+xcodebuild -project Capsule.xcodeproj -scheme Capsule -configuration Debug build
+xcodebuild -project Capsule.xcodeproj -scheme Capsule -configuration Debug test
+```
+
+Both are green as of `634cf17`. Getting there took three rounds, because the code
+was written without a Swift toolchain: `eventParamErr` is not imported into
+Swift, `AudioObjectHasPropertyData` is absent from the Swift CoreAudio
+interface, and two files used `AudioDeviceID` without importing CoreAudio. All
+five are fixed. When a build does fail, CI posts the compiler output to the pull
+request, since runner logs are awkward to reach from a terminal.
+
+**Linux (fast feedback).** Three checks that need no Xcode:
 
 | Check | What it proves | Run it |
 | --- | --- | --- |
 | `Scripts/swift_syntax_check.py` | Every `.swift` file parses (tree-sitter Swift grammar); catches unbalanced braces, malformed declarations, stray tokens | `python3 Scripts/swift_syntax_check.py` |
 | `Scripts/swift_cross_reference.py` | Every member access on a Capsule type resolves to a member that type actually declares; catches renamed methods, missing properties, typos at call sites | `python3 Scripts/swift_cross_reference.py` |
+| `xcodebuild … build` / `test` (macOS runner) | The app compiles, and every unit test passes | `xcodebuild -project Capsule.xcodeproj -scheme Capsule test` |
 | `Scripts/check_xcodeproj.py` | Every Swift file on disk is registered in a Sources build phase; every target, dependency, proxy, configuration list and shared-scheme blueprint reference resolves | `python3 Scripts/check_xcodeproj.py` |
 
 ```bash
@@ -28,12 +43,12 @@ python3 -m venv .venv && .venv/bin/pip install tree-sitter tree-sitter-swift
 .venv/bin/python Scripts/check_xcodeproj.py          # 14 Swift files registered
 ```
 
-The cross-reference check is not a type checker — it was validated by renaming
-`AudioManager.replayFocus()` and confirming the check failed at the call site in
-`MixerPresenter.swift`. **The remaining risk is type-level**: overload
-resolution, generic inference and framework API availability have not been
-compiled. Run `xcodebuild -project Capsule.xcodeproj -target Capsule build` on a
-Mac before shipping.
+None of these is a type checker. Each was validated against deliberately broken
+input: renaming `AudioManager.replayFocus()` fails the cross-reference check at
+its call site, an unregistered source file fails the project check, and a bad
+`buildConfigurationList` or scheme blueprint reference fails the target check.
+They caught real defects during development — including three of their own bugs
+— and the type-level questions they cannot answer are what the macOS job is for.
 
 ---
 
@@ -129,7 +144,8 @@ xcodebuild -project Capsule.xcodeproj -scheme Capsule test
 ```
 
 A shared scheme (`Capsule.xcodeproj/xcshareddata/xcschemes/Capsule.xcscheme`) is
-checked in so that command works from a clean clone, and CI runs it. Timed-mute
+checked in so that command works from a clean clone, and CI runs it on every
+push and pull request. Timed-mute
 expiry is injectable (`expireDueMutes(now:)`) so the tests never wait on a timer.
 
 ### Working shortcuts
@@ -200,11 +216,9 @@ only app in the list when nothing is selected. `CommandGroup(replacing:
    it needs a privileged helper, or the process-tap route above.
 3. **`NSMicrophoneUsageDescription` is unused** until capture lands; kept so the
    first capture build does not crash on the prompt.
-4. **The tests have never been run here.** The `CapsuleTests` target exists, is
-   registered, is referenced by the shared scheme and is wired into CI, but
-   there is no macOS toolchain on the machine this was written on, so
-   `xcodebuild test` has not executed. Treat the first run on a Mac as the real
-   check.
+4. **No test target for `AudioDeviceService` or the views.** The 40 tests cover
+   the view-free logic only. Core Audio access is untested (it needs a device to
+   talk to) and there are no snapshot tests for `PillSlider` or the mixer.
 5. **All copy is hardcoded English.** No `String(localized:)`, no `.xcstrings`.
 6. **Refresh churn.** Every `NSWorkspace` launch/terminate notification triggers
    a full re-enumeration. Cheap today, worth debouncing if it ever shows.
